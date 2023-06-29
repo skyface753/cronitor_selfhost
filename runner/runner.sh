@@ -22,20 +22,9 @@ for i in "$@"; do
     esac
     C="$C '$i'"
 done
-# printf "$0%s\n" "$C"
-echo "Running command: ${C}"
-echo "API_ENDPOINT: ${API_ENDPOINT}"
-echo "API_KEY: ${API_KEY}"
-echo "JOB_ID: ${JOB_ID}"
-echo "---OUTPUT---"
 # Run the command
 OUTPUT=$(eval $C)
-echo "${OUTPUT}"
-# # Check if the command was successful
-# if [ $? -ne 0 ]; then
-#     echo "Command failed: ${COMMAND}"
-#     exit 1
-# fi
+# echo "${OUTPUT}"
 
 BOOL="true"
 if [ $? -ne 0 ]; then
