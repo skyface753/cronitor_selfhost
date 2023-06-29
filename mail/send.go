@@ -23,9 +23,9 @@ func Send(config config.Config, job_id string, output string, result bool) bool 
 	msg := "From: " + from + "\n" +
 		"To: " + config.SMTP_TO + "\n"
 	if result {
-		msg += "Subject: Cronitor job " + job_id + " succeeded\n\n"
+		msg += "Subject: [SUCCESS] Cronitor job " + job_id + " succeeded\n\n"
 	} else {
-		msg += "Subject: Cronitor job " + job_id + " failed\n\n"
+		msg += "Subject: [FAILURE] Cronitor job " + job_id + " failed\n\n"
 	}
 	msg += "Log output:\n" + output + "\n"
 
