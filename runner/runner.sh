@@ -34,6 +34,6 @@ fi
 # Remove all newlines from the output
 OUTPUT=$(echo "${OUTPUT}" | tr -d '\n')
 
-
+API_RUNNER_ENDPOINT=${API_ENDPOINT}cron/result
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
-curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"output\":\"${OUTPUT}\",\"success\":${BOOL}}" ${API_ENDPOINT}
+curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"output\":\"${OUTPUT}\",\"success\":${BOOL}}" ${API_RUNNER_ENDPOINT}

@@ -16,7 +16,10 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/skyface753/cronitor_selfhost/config"
+	"github.com/skyface753/cronitor_selfhost/influx"
 	"github.com/skyface753/cronitor_selfhost/mail"
+
+	"github.com/mileusna/crontab"
 )
 
 type Result struct {
@@ -24,6 +27,12 @@ type Result struct {
 	ApiKey  string `json:"api_key"`
 	Output  string `json:"output"`
 	Success bool   `json:"success"`
+}
+
+type Trigger struct {
+	JobID     string        `json:"job_id"`
+	ApiKey    string        `json:"api_key"`
+	GraceTime time.Duration `json:"grace_time"` // In seconds
 }
 
 func main() {
@@ -42,8 +51,38 @@ func main() {
 	}
 	config := config.Config{}
 	config.FromEnv()
+	influx := influx.NewInflux()
 
-	// Handler func
+	r.HandleFunc("/api/v1/cron/trigger", func(w http.ResponseWriter, r *http.Request) {
+		// Check if the api key is set
+		var trigger Trigger
+		err := json.NewDecoder(r.Body).Decode(&trigger)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if trigger.ApiKey != config.API_KEY {
+			log.Error("Wrong api key")
+			http.Error(w, "Wrong api key", http.StatusUnauthorized)
+			return
+		}
+		// Check if the job id is set
+		if trigger.JobID == "" {
+			log.Error("JobID must be set")
+			http.Error(w, "JobID must be set", http.StatusBadRequest)
+			return
+		}
+		// Read from influx
+		success, err := influx.Read(context.Background(), trigger.JobID, 1*time.Minute)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, "Reading from influx failed", http.StatusInternalServerError)
+			return
+		}
+		log.Info(success)
+	})
+
 	r.HandleFunc("/api/v1/cron/result", func(w http.ResponseWriter, r *http.Request) {
 		var result Result
 		err := json.NewDecoder(r.Body).Decode(&result)
@@ -64,14 +103,21 @@ func main() {
 			http.Error(w, "JobID and output must be set", http.StatusBadRequest)
 			return
 		}
-		// Send mail
-		success := mail.Send(config, result.JobID, result.Output, result.Success)
-		if !success {
-			log.Error("Sending mail failed: ", success)
-			http.Error(w, "Sending mail failed", http.StatusInternalServerError)
+		if !result.Success {
+			success := mail.Send(config, result.JobID, result.Output, result.Success)
+			if !success {
+				log.Error("Sending mail failed: ", success)
+				http.Error(w, "Sending mail failed", http.StatusInternalServerError)
+				return
+			}
+		}
+		// Write to influx
+		err = influx.InsertUptime(context.Background(), result.JobID, result.Success)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
 			return
 		}
-
 		fmt.Fprintf(w, "Hello, %q", r.URL.Path)
 	})
 
@@ -80,6 +126,18 @@ func main() {
 		log.Info("Server started on port 8080")
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(err)
+		}
+	}()
+
+	// Triggers register
+	go func() {
+		log.Info("Registering triggers...")
+		for _, trigger := range config.TRIGGERS {
+			log.Info("Registering trigger: ", trigger)
+			crontab.New().MustAddJob(trigger.Cron, func() {
+				log.Info("Triggering job: ", trigger)
+			})
+
 		}
 	}()
 
