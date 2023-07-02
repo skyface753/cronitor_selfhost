@@ -6,7 +6,6 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
-	log "github.com/sirupsen/logrus"
 )
 
 type Influx struct {
@@ -40,11 +39,11 @@ func NewInflux() *Influx {
 // 	return nil
 // }
 
-func (i *Influx) InsertUptime(ctx context.Context, job_id string, success bool) error {
+func (i *Influx) InsertUptime(ctx context.Context, job_id string, success bool, content string) error {
 	// write data to influx
 	p := influxdb2.NewPoint("uptime",
 		map[string]string{"job_id": job_id},
-		map[string]interface{}{"success": success},
+		map[string]interface{}{"success": success, "content": content},
 		time.Now())
 	err := i.writeAPI.WritePoint(ctx, p)
 	if err != nil {
@@ -53,27 +52,29 @@ func (i *Influx) InsertUptime(ctx context.Context, job_id string, success bool) 
 	return nil
 }
 
-func (i *Influx) Read(ctx context.Context, job_id string, duration time.Duration) (bool, error) {
+func (i *Influx) Read(ctx context.Context, job_id string, duration time.Duration) (bool, string, error) {
 	// query data from influx
 	query := `from(bucket: "my-bucket")
 	|> range(start: -` + duration.String() + `, stop: now())
 	|> filter(fn: (r) => r._measurement == "uptime" and r.job_id == "` + job_id + `")
 	|> last()`
-	log.Info(query)
+	// log.Info(query)
 	result, err := i.queryAPI.Query(ctx, query)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	isSuccess := false
+	content := ""
 	for result.Next() {
-		if result.TableChanged() {
-			log.Infof("table: %s\n", result.TableMetadata().String())
-		}
-		log.Infof("row: %s\n", result.Record().String())
+		// if result.TableChanged() {
+		// log.Infof("table: %s\n", result.TableMetadata().String())
+		// }
+		// log.Infof("row: %s\n", result.Record().String())
 		isSuccess = result.Record().Value().(bool)
+		content = result.Record().ValueByKey("content").(string)
 	}
 	if result.Err() != nil {
-		return false, result.Err()
+		return false, "", result.Err()
 	}
-	return isSuccess, nil
+	return isSuccess, content, nil
 }

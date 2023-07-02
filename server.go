@@ -35,6 +35,41 @@ type Trigger struct {
 	GraceTime time.Duration `json:"grace_time"` // In seconds
 }
 
+func checkService(influx *influx.Influx, jobID string, graceTime *time.Duration, config *config.Config) (bool, error) {
+	// Read from influx
+	success, content, err := influx.Read(context.Background(), jobID, time.Minute)
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+	log.Info(success)
+	// Check if the job was successful
+	if success {
+		return true, nil
+	}
+	// Check if the grace time is null
+	if graceTime == nil {
+		log.Info("Grace time is null => send alert")
+		// Send alert
+		mail.Send(*config, jobID, content, false)
+		return false, nil
+	}
+
+	// Grace time is not over
+	// TODO: register a new trigger
+	log.Info("Grace time is not over")
+	// log.Info(time.Now().Add(-*graceTime))
+	go func() {
+		// Wait for grace time
+		log.Info("Waiting for grace time")
+		time.Sleep(*graceTime)
+		log.Info("After grace time => recheck")
+		checkService(influx, jobID, nil, config)
+	}()
+	return true, nil
+
+}
+
 func main() {
 	// Create a new router
 	r := mux.NewRouter()
@@ -52,36 +87,6 @@ func main() {
 	config := config.Config{}
 	config.FromEnv()
 	influx := influx.NewInflux()
-
-	r.HandleFunc("/api/v1/cron/trigger", func(w http.ResponseWriter, r *http.Request) {
-		// Check if the api key is set
-		var trigger Trigger
-		err := json.NewDecoder(r.Body).Decode(&trigger)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if trigger.ApiKey != config.API_KEY {
-			log.Error("Wrong api key")
-			http.Error(w, "Wrong api key", http.StatusUnauthorized)
-			return
-		}
-		// Check if the job id is set
-		if trigger.JobID == "" {
-			log.Error("JobID must be set")
-			http.Error(w, "JobID must be set", http.StatusBadRequest)
-			return
-		}
-		// Read from influx
-		success, err := influx.Read(context.Background(), trigger.JobID, 1*time.Minute)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, "Reading from influx failed", http.StatusInternalServerError)
-			return
-		}
-		log.Info(success)
-	})
 
 	r.HandleFunc("/api/v1/cron/result", func(w http.ResponseWriter, r *http.Request) {
 		var result Result
@@ -112,7 +117,7 @@ func main() {
 			}
 		}
 		// Write to influx
-		err = influx.InsertUptime(context.Background(), result.JobID, result.Success)
+		err = influx.InsertUptime(context.Background(), result.JobID, result.Success, result.Output)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
@@ -134,10 +139,8 @@ func main() {
 		log.Info("Registering triggers...")
 		for _, trigger := range config.TRIGGERS {
 			log.Info("Registering trigger: ", trigger)
-			crontab.New().MustAddJob(trigger.Cron, func() {
-				log.Info("Triggering job: ", trigger)
-			})
-
+			crontab.New().MustAddJob(trigger.Cron, checkService, influx, trigger.JobID, &trigger.GraceTime, &config)
+			checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
 		}
 	}()
 

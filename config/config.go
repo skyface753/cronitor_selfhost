@@ -44,7 +44,7 @@ func (c *Config) FromEnv() {
 	for _, env := range environ {
 		// TRIGGER_jobid_gracetime = "* 0 * * *"
 		// Example: TRIGGER_1234567890_1h = "* 0 * * *"
-		log.Info(env)
+		// log.Info(env)
 		if len(env) > 8 && env[:8] == "TRIGGER_" {
 			log.Info("Found trigger: " + env)
 			// Remove prefix

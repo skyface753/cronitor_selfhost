@@ -15,7 +15,8 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       SMTP_TO: ${SMTP_TO}
       PRODUCTION: true
-      TRIGGER_1234567890_1h: '* 0 * * *'
+      TRIGGER_1234567890_10s: '* 0 * * *'
+      TZ: Europe/Berlin
     restart: unless-stopped
   # InfluxDB - Database for sensor data
   influxdb:
