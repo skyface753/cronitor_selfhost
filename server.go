@@ -35,9 +35,14 @@ type Trigger struct {
 	GraceTime time.Duration `json:"grace_time"` // In seconds
 }
 
-func checkService(influx *influx.Influx, jobID string, graceTime *time.Duration, config *config.Config) (bool, error) {
+var (
+	influxClient *influx.Influx
+	configClient *config.Config
+)
+
+func checkService(jobID string, graceTime *time.Duration) (bool, error) {
 	// Read from influx
-	success, content, err := influx.Read(context.Background(), jobID, time.Minute)
+	success, content, err := influxClient.Read(context.Background(), jobID, time.Minute)
 	if err != nil {
 		log.Error(err)
 		return false, err
@@ -51,7 +56,7 @@ func checkService(influx *influx.Influx, jobID string, graceTime *time.Duration,
 	if graceTime == nil {
 		log.Info(jobID, "Grace time is null => send alert")
 		// Send alert
-		mail.Send(*config, jobID, content, false)
+		mail.Send(*configClient, jobID, content, false)
 		return false, nil
 	}
 
@@ -64,7 +69,7 @@ func checkService(influx *influx.Influx, jobID string, graceTime *time.Duration,
 		log.Info(jobID, "Waiting for grace time")
 		time.Sleep(*graceTime)
 		log.Info(jobID, "After grace time => recheck")
-		checkService(influx, jobID, nil, config)
+		checkService(jobID, nil)
 	}()
 	return true, nil
 
@@ -84,9 +89,9 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
-	config := config.Config{}
-	config.FromEnv()
-	influx := influx.NewInflux()
+	configClient = &config.Config{}
+	configClient.FromEnv()
+	influxClient = influx.NewInflux()
 
 	r.HandleFunc("/api/v1/cron/result", func(w http.ResponseWriter, r *http.Request) {
 		var result Result
@@ -97,7 +102,7 @@ func main() {
 			return
 		}
 		log.Info(result)
-		if result.ApiKey != config.API_KEY {
+		if result.ApiKey != configClient.API_KEY {
 			log.Error("Wrong api key")
 			http.Error(w, "Wrong api key", http.StatusUnauthorized)
 			return
@@ -109,7 +114,7 @@ func main() {
 			return
 		}
 		if !result.Success {
-			success := mail.Send(config, result.JobID, result.Output, result.Success)
+			success := mail.Send(*configClient, result.JobID, result.Output, result.Success)
 			if !success {
 				log.Error("Sending mail failed: ", success)
 				http.Error(w, "Sending mail failed", http.StatusInternalServerError)
@@ -117,7 +122,7 @@ func main() {
 			}
 		}
 		// Write to influx
-		err = influx.InsertUptime(context.Background(), result.JobID, result.Success, result.Output)
+		err = influxClient.InsertUptime(context.Background(), result.JobID, result.Success, result.Output)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
@@ -137,9 +142,9 @@ func main() {
 	// Triggers register
 	go func() {
 		log.Info("Registering triggers...")
-		for _, trigger := range config.TRIGGERS {
+		for _, trigger := range configClient.TRIGGERS {
 			log.Info("Registering trigger: ", trigger)
-			crontab.New().MustAddJob(trigger.Cron, checkService, influx, trigger.JobID, &trigger.GraceTime, &config)
+			crontab.New().MustAddJob(trigger.Cron, checkService, trigger.JobID, &trigger.GraceTime)
 			// checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
 		}
 	}()
