@@ -1,0 +1,7 @@
+site_name: Cronitor Selfhosted
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - About: about.md
+  - Installation: installation.md

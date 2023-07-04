@@ -49,7 +49,7 @@ func checkService(influx *influx.Influx, jobID string, graceTime *time.Duration,
 	}
 	// Check if the grace time is null
 	if graceTime == nil {
-		log.Info("Grace time is null => send alert")
+		log.Info(jobID, "Grace time is null => send alert")
 		// Send alert
 		mail.Send(*config, jobID, content, false)
 		return false, nil
@@ -57,13 +57,13 @@ func checkService(influx *influx.Influx, jobID string, graceTime *time.Duration,
 
 	// Grace time is not over
 	// TODO: register a new trigger
-	log.Info("Grace time is not over")
+	log.Info(jobID, "Grace time is not over")
 	// log.Info(time.Now().Add(-*graceTime))
 	go func() {
 		// Wait for grace time
-		log.Info("Waiting for grace time")
+		log.Info(jobID, "Waiting for grace time")
 		time.Sleep(*graceTime)
-		log.Info("After grace time => recheck")
+		log.Info(jobID, "After grace time => recheck")
 		checkService(influx, jobID, nil, config)
 	}()
 	return true, nil
@@ -140,7 +140,7 @@ func main() {
 		for _, trigger := range config.TRIGGERS {
 			log.Info("Registering trigger: ", trigger)
 			crontab.New().MustAddJob(trigger.Cron, checkService, influx, trigger.JobID, &trigger.GraceTime, &config)
-			checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
+			// checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
 		}
 	}()
 
