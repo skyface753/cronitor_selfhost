@@ -66,6 +66,7 @@ func checkService(jobID string, minTime *config.Duration, graceTime *config.Dura
 		log.Info(jobID, "Grace time is null => send alert")
 		// Send alert
 		mail.Send(*configClient, jobID, content, false)
+		influxClient.InsertUptimeMissing(context.Background(), configClient, jobID)
 		return false, nil
 	}
 

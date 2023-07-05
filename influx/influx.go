@@ -42,6 +42,19 @@ func (i *Influx) InsertUptime(ctx context.Context, config *config.Config, job_id
 	return nil
 }
 
+func (i *Influx) InsertUptimeMissing(ctx context.Context, config *config.Config, job_id string) error {
+	p := influxdb2.NewPointWithMeasurement("uptime").
+		AddTag("job_id", job_id).
+		AddField("success", false).
+		AddField("content", "Missing").
+		SetTime(time.Now())
+	err := i.writeAPI.WritePoint(ctx, p)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (i *Influx) Read(ctx context.Context, config *config.Config, job_id string, duration time.Duration) (bool, string, error) {
 	// query data from influx
 	query := `from(bucket: "my-bucket")
@@ -90,8 +103,6 @@ func (i *Influx) GetAllLastForAllJobs(ctx context.Context, config *config.Config
 			if result.TableChanged() {
 				log.Info("table: ", result.TableMetadata().String())
 			}
-
-			// val, ok := resultPoints[result.Record().Time()]
 
 			val, ok := resultPoints[result.Record().ValueByKey("job_id").(string)]
 

@@ -150,19 +150,39 @@ func (c *Config) InitFromFile() {
 	// 	}
 	// }
 
+	// "1234567890" => "job_id"
 	var jobs map[string]Job
 	err = json.Unmarshal(byteValue, &jobs)
 	if err != nil {
 		log.Error(err)
 		return
 	}
+	// Jobid
+	for jobid, job := range jobs {
+		job.JobID = jobid
+		jobs[jobid] = job
+	}
+
 	// Check if grace_time is lower than min_time
 	for _, job := range jobs {
+		// Check if all values are set
+		if job.Cron == "" {
+			log.Error("Cron is empty for job: " + job.JobID)
+			log.Error("Please fix your jobs.json file")
+			return
+		}
+
 		if job.GraceTime.Duration < job.MinTime.Duration {
 			log.Error("GraceTime is lower than MinTime for job: " + job.JobID)
 			log.Error("Please fix your jobs.json file")
 			return
 		}
+		if job.JobID == "" {
+			log.Error("JobID is empty for job: " + job.JobID)
+			log.Error("Please fix your jobs.json file")
+			return
+		}
+
 	}
 
 	c.JOBS = jobs
