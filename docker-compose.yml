@@ -15,9 +15,12 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       SMTP_TO: ${SMTP_TO}
       PRODUCTION: true
-      TRIGGER_testjob_10s: '*/2 * * * *'
+      JOB_testjob_10s: '*/2 * * * *'
       TZ: Europe/Berlin
     restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
   # InfluxDB - Database for sensor data
   influxdb:
     image: influxdb:latest
@@ -25,7 +28,7 @@ services:
       - no-new-privileges:true
     restart: unless-stopped
     ports:
-      - '8086:8086'
+      - '127.0.0.1:8086:8086'
     # volumes:
     #   - ./influx/config:/etc/influxdb2
     #   - ./influx/lib:/var/lib/influxdb2
@@ -36,6 +39,11 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: my-org
       DOCKER_INFLUXDB_INIT_BUCKET: my-bucket
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+    healthcheck:
+      test: 'curl -f http://localhost:8086/ping'
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
   # cron:
   #   image: skyface753/skycron-cron
