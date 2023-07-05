@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus" // Use default log, because the log wrapper is not initialized yet
 )
 
 type Config struct {
@@ -16,13 +16,12 @@ type Config struct {
 	SMTP_PASSWORD string
 	SMTP_FROM     string
 	SMTP_TO       string
-	TRIGGERS      map[string]Trigger
+	JOBS          map[string]Job
+	DEBUG         bool
 }
 
-type Trigger struct {
-	JobID string `json:"job_id"`
-	// Time, when the job should be triggered
-	// TriggerAt time.Time     `json:"trigger_at"`
+type Job struct {
+	JobID     string        `json:"job_id"`
 	Cron      string        `json:"cron"`
 	GraceTime time.Duration `json:"grace_time"` // In seconds
 }
@@ -30,29 +29,38 @@ type Trigger struct {
 // From environment variables
 func (c *Config) FromEnv() {
 	c.API_KEY = os.Getenv("API_KEY")
-	log.Info("API_KEY: " + c.API_KEY)
 	c.SMTP_HOST = os.Getenv("SMTP_HOST")
 	c.SMTP_PORT = os.Getenv("SMTP_PORT")
 	c.SMTP_USERNAME = os.Getenv("SMTP_USERNAME")
 	c.SMTP_PASSWORD = os.Getenv("SMTP_PASSWORD")
 	c.SMTP_FROM = os.Getenv("SMTP_FROM")
 	c.SMTP_TO = os.Getenv("SMTP_TO")
-	// Triggers (from env with prefix TRIGGER_)
+	c.DEBUG = os.Getenv("DEBUG") == "true" || os.Getenv("DEBUG") == "1" || os.Getenv("DEBUG") == "TRUE"
+	if !c.ValideForMailEnabled() {
+		log.Warn("Mail is not enabled")
+	}
+	// Jobs (from env with prefix JOB_)
 	environ := os.Environ()
-	c.TRIGGERS = make(map[string]Trigger)
-	log.Info("TRIGGERS:")
+	c.JOBS = make(map[string]Job)
+	if c.DEBUG {
+
+		log.Info("Parsing Jobs:")
+	}
 	for _, env := range environ {
-		// TRIGGER_jobid_gracetime = "* 0 * * *"
-		// Example: TRIGGER_1234567890_1h = "* 0 * * *"
+		// JOB_jobid_gracetime = "* 0 * * *"
+		// Example: JOB_1234567890_1h = "* 0 * * *"
 		// log.Info(env)
-		if len(env) > 8 && env[:8] == "TRIGGER_" {
-			log.Info("Found trigger: " + env)
+		PREFIX := "JOB_"
+		if len(env) > len(PREFIX) && env[:len(PREFIX)] == PREFIX {
+			if c.DEBUG {
+				log.Info("Found Job: " + env)
+			}
 			// Remove prefix
-			env = env[8:]
+			env = env[len(PREFIX):]
 			// Split by _
 			parts := strings.Split(env, "_")
 			if len(parts) != 2 {
-				log.Error("Invalid trigger: " + env)
+				log.Error("Invalid Job: " + env)
 				continue
 			}
 
@@ -69,7 +77,7 @@ func (c *Config) FromEnv() {
 			}
 
 			// Add to map
-			c.TRIGGERS[parts[0]] = Trigger{
+			c.JOBS[parts[0]] = Job{
 				JobID:     parts[0],
 				Cron:      cron,
 				GraceTime: graceTime,

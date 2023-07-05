@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,10 +13,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
 	"github.com/skyface753/cronitor_selfhost/config"
 	"github.com/skyface753/cronitor_selfhost/influx"
 	"github.com/skyface753/cronitor_selfhost/mail"
+	log "github.com/skyface753/cronitor_selfhost/skyLog"
 
 	"github.com/mileusna/crontab"
 )
@@ -42,18 +42,21 @@ var (
 
 func checkService(jobID string, graceTime *time.Duration) (bool, error) {
 	// Read from influx
-	success, content, err := influxClient.Read(context.Background(), jobID, time.Minute)
+	success, content, err := influxClient.Read(context.Background(), configClient, jobID, time.Minute)
 	if err != nil {
 		log.Error(err)
 		return false, err
 	}
+
 	log.Info("Job: ", jobID, " success: ", success, " content: ", content)
+	log.Info("Grace time: ", graceTime)
 	// Check if the job was successful
 	if success {
 		return true, nil
 	}
 	// Check if the grace time is null
 	if graceTime == nil {
+
 		log.Info(jobID, "Grace time is null => send alert")
 		// Send alert
 		mail.Send(*configClient, jobID, content, false)
@@ -90,8 +93,42 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 	configClient = &config.Config{}
+	log.Init(configClient)
 	configClient.FromEnv()
 	influxClient = influx.NewInflux()
+
+	r.HandleFunc("/api/v1/cron/status", func(w http.ResponseWriter, r *http.Request) {
+		// json.NewEncoder(w).Encode(configClient.JOBS)
+		result, err := influxClient.GetAllForAll(context.Background())
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(result)
+	})
+
+	r.HandleFunc("/api/v1/cron/status/last", func(w http.ResponseWriter, r *http.Request) {
+		result, err := influxClient.GetAllLastForAllJobs(context.Background(), configClient)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(result)
+	})
+
+	r.HandleFunc("/api/v1/cron/status/job/{jobID}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		jobID := vars["jobID"]
+		result, err := influxClient.GetAllForJob(context.Background(), configClient, jobID)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(result)
+	})
 
 	r.HandleFunc("/api/v1/cron/result", func(w http.ResponseWriter, r *http.Request) {
 		var result Result
@@ -114,15 +151,16 @@ func main() {
 			return
 		}
 		if !result.Success {
-			success := mail.Send(*configClient, result.JobID, result.Output, result.Success)
-			if !success {
-				log.Error("Sending mail failed: ", success)
-				http.Error(w, "Sending mail failed", http.StatusInternalServerError)
-				return
-			}
+			log.Info("Job failed" + result.JobID)
+			mail.Send(*configClient, result.JobID, result.Output, result.Success)
+			// if !success {
+			// 	log.Error("Sending mail failed: ", success)
+			// 	http.Error(w, "Sending mail failed", http.StatusInternalServerError)
+			// 	return
+			// }
 		}
 		// Write to influx
-		err = influxClient.InsertUptime(context.Background(), result.JobID, result.Success, result.Output)
+		err = influxClient.InsertUptime(context.Background(), configClient, result.JobID, result.Success, result.Output)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
@@ -139,13 +177,14 @@ func main() {
 		}
 	}()
 
-	// Triggers register
+	// Register Jobs
 	go func() {
-		log.Info("Registering triggers...")
-		for _, trigger := range configClient.TRIGGERS {
-			log.Info("Registering trigger: ", trigger)
-			crontab.New().MustAddJob(trigger.Cron, checkService, trigger.JobID, &trigger.GraceTime)
-			checkService(trigger.JobID, nil)
+
+		log.Info("Registering jobs...")
+		for _, job := range configClient.JOBS {
+			log.Info("Registering job: ", job)
+			crontab.New().MustAddJob(job.Cron, checkService, job.JobID, &job.GraceTime)
+			checkService(job.JobID, nil)
 			// checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
 		}
 	}()
