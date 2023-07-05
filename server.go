@@ -25,7 +25,7 @@ import (
 type Result struct {
 	JobID   string `json:"job_id"`
 	ApiKey  string `json:"api_key"`
-	Output  string `json:"output"`
+	Error   string `json:"error"`
 	Success bool   `json:"success"`
 }
 
@@ -40,7 +40,13 @@ var (
 	configClient *config.Config
 )
 
-func checkService(jobID string, graceTime *time.Duration) (bool, error) {
+func checkService(jobID string, minTime *config.Duration, graceTime *config.Duration) (bool, error) {
+	// Wait for min time
+	if minTime != nil {
+		log.Info(jobID, "Waiting for min time")
+		time.Sleep(time.Duration(minTime.Duration))
+		log.Info(jobID, "Min time is over")
+	}
 	// Read from influx
 	success, content, err := influxClient.Read(context.Background(), configClient, jobID, time.Minute)
 	if err != nil {
@@ -49,7 +55,7 @@ func checkService(jobID string, graceTime *time.Duration) (bool, error) {
 	}
 
 	log.Info("Job: ", jobID, " success: ", success, " content: ", content)
-	log.Info("Grace time: ", graceTime)
+	log.Info("Real Grace time: ", graceTime)
 	// Check if the job was successful
 	if success {
 		return true, nil
@@ -66,13 +72,18 @@ func checkService(jobID string, graceTime *time.Duration) (bool, error) {
 	// Grace time is not over
 	// TODO: register a new trigger
 	log.Info(jobID, "Grace time is not over")
+	// gracetime - mintime
+	newGraceTime := graceTime.Duration - minTime.Duration
+
 	// log.Info(time.Now().Add(-*graceTime))
 	go func() {
 		// Wait for grace time
-		log.Info(jobID, "Waiting for grace time")
-		time.Sleep(*graceTime)
+		log.Info(jobID, "Waiting for new grace time:", newGraceTime)
+		// time.Sleep(*graceTime)
+		// config.Duration to time.Duration
+		time.Sleep(newGraceTime)
 		log.Info(jobID, "After grace time => recheck")
-		checkService(jobID, nil)
+		checkService(jobID, nil, nil)
 	}()
 	return true, nil
 
@@ -93,8 +104,8 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 	configClient = &config.Config{}
+	configClient.Init()
 	log.Init(configClient)
-	configClient.FromEnv()
 	influxClient = influx.NewInflux()
 
 	r.HandleFunc("/api/v1/cron/status", func(w http.ResponseWriter, r *http.Request) {
@@ -145,22 +156,29 @@ func main() {
 			return
 		}
 		// Check if all the required fields are set
-		if result.JobID == "" || result.Output == "" {
-			log.Error("JobID and output must be set")
-			http.Error(w, "JobID and output must be set", http.StatusBadRequest)
+		if result.JobID == "" {
+			log.Error("JobID is empty")
+			http.Error(w, "JobID is empty", http.StatusBadRequest)
+			return
+		}
+		// If success is false, error is required
+		if !result.Success && result.Error == "" {
+			log.Error("Error is empty")
+			http.Error(w, "Error is empty", http.StatusBadRequest)
+			return
+		}
+		// Check if the job exists
+		if !configClient.JobExists(result.JobID) {
+			log.Error("Job does not exist")
+			http.Error(w, "Job does not exist", http.StatusBadRequest)
 			return
 		}
 		if !result.Success {
-			log.Info("Job failed" + result.JobID)
-			mail.Send(*configClient, result.JobID, result.Output, result.Success)
-			// if !success {
-			// 	log.Error("Sending mail failed: ", success)
-			// 	http.Error(w, "Sending mail failed", http.StatusInternalServerError)
-			// 	return
-			// }
+			log.Info("Job failed", result.JobID)
+			mail.Send(*configClient, result.JobID, result.Error, result.Success)
 		}
 		// Write to influx
-		err = influxClient.InsertUptime(context.Background(), configClient, result.JobID, result.Success, result.Output)
+		err = influxClient.InsertUptime(context.Background(), configClient, result.JobID, result.Success, result.Error)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
@@ -183,8 +201,8 @@ func main() {
 		log.Info("Registering jobs...")
 		for _, job := range configClient.JOBS {
 			log.Info("Registering job: ", job)
-			crontab.New().MustAddJob(job.Cron, checkService, job.JobID, &job.GraceTime)
-			checkService(job.JobID, nil)
+			crontab.New().MustAddJob(job.Cron, checkService, job.JobID, &job.MinTime, &job.GraceTime)
+			// checkService(job.JobID, nil, nil)
 			// checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
 		}
 	}()

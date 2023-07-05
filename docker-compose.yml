@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - '8123:8080'
+    volumes:
+      - ./jobs.json:/jobs.json
     environment:
       API_KEY: ${API_KEY}
       SMTP_HOST: ${SMTP_HOST}
@@ -17,6 +19,7 @@ services:
       PRODUCTION: true
       JOB_testjob_10s: '*/2 * * * *'
       TZ: Europe/Berlin
+      DEBUG: 'true'
     restart: unless-stopped
     depends_on:
       influxdb:

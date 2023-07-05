@@ -1,0 +1,7 @@
+{
+  "testjob": {
+    "cron": "* * * * *",
+    "min_time": "10s",
+    "grace_time": "1m"
+  }
+}

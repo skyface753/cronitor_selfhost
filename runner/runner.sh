@@ -23,17 +23,21 @@ for i in "$@"; do
     esac
     C="$C '$i'"
 done
-# Run the command
-OUTPUT=$(eval $C)
+# Run the command and store the output, store stdout and stderr in different variables
+
+ERROR=$(eval $C 2>&1 >/dev/null)
+
+# OUTPUT=$(eval $C)
 # echo "${OUTPUT}"
 
 BOOL="true"
-if [ $? -ne 0 ]; then
+# If ERROR is not empty, the command failed, so set the boolean to false
+if [ -n "${ERROR}" ]; then
     BOOL="false"
 fi
 # Remove all newlines from the output
-OUTPUT=$(echo "${OUTPUT}" | tr -d '\n')
+ERROR=$(echo "${ERROR}" | tr -d '\n')
 
 API_RUNNER_ENDPOINT=${API_ENDPOINT}cron/result
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
-curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"output\":\"${OUTPUT}\",\"success\":${BOOL}}" ${API_RUNNER_ENDPOINT}
+curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"error\":\"${ERROR}\",\"success\":${BOOL}}" ${API_RUNNER_ENDPOINT}

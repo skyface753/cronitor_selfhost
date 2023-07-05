@@ -12,7 +12,7 @@ func Init(config *config.Config) {
 }
 
 func logToConsole(logLevel log.Level, args ...interface{}) {
-	if configClient.DEBUG {
+	if !configClient.DEBUG {
 		return
 	}
 	switch logLevel {

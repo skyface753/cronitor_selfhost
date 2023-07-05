@@ -29,11 +29,11 @@ func NewInflux() *Influx {
 	return &Influx{client, writeAPI, queryAPI}
 }
 
-func (i *Influx) InsertUptime(ctx context.Context, config *config.Config, job_id string, success bool, content string) error {
+func (i *Influx) InsertUptime(ctx context.Context, config *config.Config, job_id string, success bool, errorContent string) error {
 	p := influxdb2.NewPointWithMeasurement("uptime").
 		AddTag("job_id", job_id).
 		AddField("success", success).
-		AddField("content", content).
+		AddField("content", errorContent).
 		SetTime(time.Now())
 	err := i.writeAPI.WritePoint(ctx, p)
 	if err != nil {
@@ -218,11 +218,21 @@ func (i *Influx) GetAllForAll(ctx context.Context) (UptimeDataForAllJobsMap, err
 
 			switch field := result.Record().Field(); field {
 			case "success":
-				// val["success"] = result.Record().Value().(bool)
-				val[result.Record().Time()] = UptimeData{Success: result.Record().Value().(bool)}
+				if _, ok := val[result.Record().Time()]; !ok {
+					val[result.Record().Time()] = UptimeData{}
+				}
+				uptimedata := val[result.Record().Time()]
+				uptimedata.Success = result.Record().Value().(bool)
+				val[result.Record().Time()] = uptimedata
+
 			case "content":
-				// val["content"] = result.Record().Value().(string)
-				val[result.Record().Time()] = UptimeData{Content: result.Record().Value().(string)}
+				if _, ok := val[result.Record().Time()]; !ok {
+					val[result.Record().Time()] = UptimeData{}
+				}
+				uptimedata := val[result.Record().Time()]
+				uptimedata.Content = result.Record().Value().(string)
+				val[result.Record().Time()] = uptimedata
+
 			default:
 				log.Error("unrecognized field ", field)
 			}
