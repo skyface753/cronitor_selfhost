@@ -47,7 +47,7 @@ func checkService(jobID string, graceTime *time.Duration) (bool, error) {
 		log.Error(err)
 		return false, err
 	}
-	log.Info(success)
+	log.Info("Job: ", jobID, " success: ", success, " content: ", content)
 	// Check if the job was successful
 	if success {
 		return true, nil
@@ -128,7 +128,7 @@ func main() {
 			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "Hello, %q", r.URL.Path)
+		// fmt.Fprintf(w, "Hello, %q", r.URL.Path)
 	})
 
 	// Start the server
@@ -145,6 +145,7 @@ func main() {
 		for _, trigger := range configClient.TRIGGERS {
 			log.Info("Registering trigger: ", trigger)
 			crontab.New().MustAddJob(trigger.Cron, checkService, trigger.JobID, &trigger.GraceTime)
+			checkService(trigger.JobID, nil)
 			// checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
 		}
 	}()

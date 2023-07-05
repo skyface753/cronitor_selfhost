@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '8080:8080'
+      - '8123:8080'
     environment:
       API_KEY: ${API_KEY}
       SMTP_HOST: ${SMTP_HOST}
@@ -15,7 +15,7 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       SMTP_TO: ${SMTP_TO}
       PRODUCTION: true
-      TRIGGER_1234567890_10s: '* 0 * * *'
+      TRIGGER_testjob_10s: '*/2 * * * *'
       TZ: Europe/Berlin
     restart: unless-stopped
   # InfluxDB - Database for sensor data

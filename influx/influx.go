@@ -3,7 +3,7 @@ package influx
 import (
 	"context"
 	"time"
-
+	log "github.com/sirupsen/logrus"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 )
@@ -40,11 +40,11 @@ func NewInflux() *Influx {
 // }
 
 func (i *Influx) InsertUptime(ctx context.Context, job_id string, success bool, content string) error {
-	// write data to influx
-	p := influxdb2.NewPoint("uptime",
-		map[string]string{"job_id": job_id},
-		map[string]interface{}{"success": success, "content": content},
-		time.Now())
+	p := influxdb2.NewPointWithMeasurement("uptime").
+		AddTag("job_id", job_id).
+		AddField("success", success).
+		AddField("content", content).
+		SetTime(time.Now())
 	err := i.writeAPI.WritePoint(ctx, p)
 	if err != nil {
 		return err
@@ -66,13 +66,15 @@ func (i *Influx) Read(ctx context.Context, job_id string, duration time.Duration
 	isSuccess := false
 	content := ""
 	for result.Next() {
-		// if result.TableChanged() {
-		// log.Infof("table: %s\n", result.TableMetadata().String())
-		// }
-		// log.Infof("row: %s\n", result.Record().String())
-		isSuccess = result.Record().Value().(bool)
-		content = result.Record().ValueByKey("content").(string)
+		if(result.Record().Field() == "success") {
+			isSuccess = result.Record().Value().(bool)
+		} else if(result.Record().Field() == "content") {
+			content = result.Record().Value().(string)
+		}else{
+			log.Error("Unknown field: ", result.Record().Field())
+		}
 	}
+	// log.Info("success: ", isSuccess, " content: ", content)
 	if result.Err() != nil {
 		return false, "", result.Err()
 	}
