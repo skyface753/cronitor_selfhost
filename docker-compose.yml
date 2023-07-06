@@ -16,15 +16,17 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM: ${SMTP_FROM}
       SMTP_TO: ${SMTP_TO}
+      INFLUXDB_ORG: ${INFLUXDB_ORG}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
+      INFLUXDB_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
       PRODUCTION: true
-      JOB_testjob_10s: '*/2 * * * *'
       TZ: Europe/Berlin
-      DEBUG: 'true'
+      DEBUG: true
     restart: unless-stopped
     depends_on:
       influxdb:
         condition: service_healthy
-  # InfluxDB - Database for sensor data
+
   influxdb:
     image: influxdb:latest
     security_opt:
@@ -32,26 +34,17 @@ services:
     restart: unless-stopped
     ports:
       - '127.0.0.1:8086:8086'
-    # volumes:
-    #   - ./influx/config:/etc/influxdb2
-    #   - ./influx/lib:/var/lib/influxdb2
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: my-user
-      DOCKER_INFLUXDB_INIT_PASSWORD: my-password
-      DOCKER_INFLUXDB_INIT_ORG: my-org
-      DOCKER_INFLUXDB_INIT_BUCKET: my-bucket
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+      INFLUXDB_HTTP_LOG_ENABLED: false
+      INFLUXDB_DATA_QUERY_LOG_ENABLED: false
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
     healthcheck:
       test: 'curl -f http://localhost:8086/ping'
       interval: 5s
       timeout: 10s
       retries: 5
-
-  # cron:
-  #   image: skyface753/skycron-cron
-  #   build:
-  #     context: .
-  #     dockerfile: cron/Dockerfile.cron
-  #   volumes:
-  #     - ./cron/crontest:/crons/crontest

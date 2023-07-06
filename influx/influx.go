@@ -17,15 +17,10 @@ type Influx struct {
 	queryAPI api.QueryAPI
 }
 
-const (
-	org    = "my-org"
-	bucket = "my-bucket"
-)
-
-func NewInflux() *Influx {
-	client := influxdb2.NewClient("http://influxdb:8086", "my-super-secret-auth-token")
-	writeAPI := client.WriteAPIBlocking(org, bucket)
-	queryAPI := client.QueryAPI(org)
+func NewInflux(config *config.Config) *Influx {
+	client := influxdb2.NewClient("http://influxdb:8086", config.INFLUXDB_ADMIN_TOKEN)
+	writeAPI := client.WriteAPIBlocking(config.INFLUXDB_ORG, config.INFLUXDB_BUCKET)
+	queryAPI := client.QueryAPI(config.INFLUXDB_ORG)
 	return &Influx{client, writeAPI, queryAPI}
 }
 
@@ -42,12 +37,26 @@ func (i *Influx) InsertUptime(ctx context.Context, config *config.Config, job_id
 	return nil
 }
 
-func (i *Influx) InsertUptimeMissing(ctx context.Context, config *config.Config, job_id string) error {
+func (i *Influx) InsertUptimeWaiting(ctx context.Context, config *config.Config, job_id string, success bool, errorContent string) error {
+	p := influxdb2.NewPointWithMeasurement("uptime").
+		AddTag("job_id", job_id).
+		AddTag("waiting", "true").
+		AddField("success", success).
+		AddField("content", errorContent).
+		SetTime(time.Now())
+	err := i.writeAPI.WritePoint(ctx, p)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (i *Influx) InsertUptimeMissing(ctx context.Context, config *config.Config, job_id string, graceTime time.Duration) error {
 	p := influxdb2.NewPointWithMeasurement("uptime").
 		AddTag("job_id", job_id).
 		AddField("success", false).
 		AddField("content", "Missing").
-		SetTime(time.Now())
+		SetTime(time.Now().Add(-graceTime))
 	err := i.writeAPI.WritePoint(ctx, p)
 	if err != nil {
 		return err
@@ -61,7 +70,8 @@ func (i *Influx) Read(ctx context.Context, config *config.Config, job_id string,
 	|> range(start: -` + duration.String() + `, stop: now())
 	|> filter(fn: (r) => r._measurement == "uptime" and r.job_id == "` + job_id + `")
 	|> last()`
-	// log.Info(query)
+	// Remove \n, \t and \ from query
+	log.Info(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""), "\\", ""))
 	result, err := i.queryAPI.Query(ctx, query)
 	if err != nil {
 		return false, "", err
@@ -90,7 +100,7 @@ func (i *Influx) GetAllLastForAllJobs(ctx context.Context, config *config.Config
 	|> range(start: -24h, stop: now())
 	|> filter(fn: (r) => r._measurement == "uptime")
 	|> last()`
-	log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
+	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
 
 	result, err := i.queryAPI.Query(ctx, query)
 	// Putting back the data in share requires a bit of work
@@ -100,9 +110,9 @@ func (i *Influx) GetAllLastForAllJobs(ctx context.Context, config *config.Config
 		// Iterate over query response
 		for result.Next() {
 			// Notice when group key has changed
-			if result.TableChanged() {
-				log.Info("table: ", result.TableMetadata().String())
-			}
+			// if result.TableChanged() {
+			// 	// log.Info("table: ", result.TableMetadata().String())
+			// }
 
 			val, ok := resultPoints[result.Record().ValueByKey("job_id").(string)]
 
@@ -152,7 +162,7 @@ func (i *Influx) GetAllForJob(ctx context.Context, config *config.Config, jobID 
 	|> filter(fn: (r) => r._measurement == "uptime" and r.job_id == "` + jobID + `")`
 
 	// Log query without \n and \t
-	log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
+	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
 	result, err := i.queryAPI.Query(ctx, query)
 
 	// var resultPoints = make(map[time.Time]map[string]interface{})
@@ -161,10 +171,10 @@ func (i *Influx) GetAllForJob(ctx context.Context, config *config.Config, jobID 
 		// Iterate over query response
 		for result.Next() {
 			// Notice when group key has changed
-			if result.TableChanged() {
-				// fmt.Printf("table: %s\n", result.TableMetadata().String())
-				log.Info("table: ", result.TableMetadata().String())
-			}
+			// if result.TableChanged() {
+			// 	// fmt.Printf("table: %s\n", result.TableMetadata().String())
+			// 	// log.Info("table: ", result.TableMetadata().String())
+			// }
 
 			val, ok := resultPoints[result.Record().Time()]
 
@@ -179,8 +189,12 @@ func (i *Influx) GetAllForJob(ctx context.Context, config *config.Config, jobID 
 				// val["success"] = result.Record().Value().(bool)
 				val.Success = result.Record().Value().(bool)
 			case "content":
-				// val["content"] = result.Record().Value().(string)
-				val.Content = result.Record().Value().(string)
+				// Fix "interface {} is nil, not string" error
+				if result.Record().Value() == nil {
+					val.Content = ""
+				} else {
+					val.Content = result.Record().Value().(string)
+				}
 			default:
 				log.Error("unrecognized field ", field)
 			}
@@ -205,7 +219,7 @@ func (i *Influx) GetAllForAll(ctx context.Context) (UptimeDataForAllJobsMap, err
 	|> filter(fn: (r) => r._measurement == "uptime")`
 
 	// Log query without \n and \t
-	log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
+	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
 	result, err := i.queryAPI.Query(ctx, query)
 
 	// var resultPoints = make(map[time.Time]map[string]interface{})
@@ -214,10 +228,10 @@ func (i *Influx) GetAllForAll(ctx context.Context) (UptimeDataForAllJobsMap, err
 		// Iterate over query response
 		for result.Next() {
 			// Notice when group key has changed
-			if result.TableChanged() {
-				// fmt.Printf("table: %s\n", result.TableMetadata().String())
-				log.Info("table: ", result.TableMetadata().String())
-			}
+			// if result.TableChanged() {
+			// 	// fmt.Printf("table: %s\n", result.TableMetadata().String())
+			// 	// log.Info("table: ", result.TableMetadata().String())
+			// }
 
 			val, ok := resultPoints[result.Record().ValueByKey("job_id").(string)]
 

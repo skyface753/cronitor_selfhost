@@ -1,11 +1,7 @@
-// http server listening on port 8080 with the following endpoints:
-// - /api/v1/cron/afterrun
-
 package main
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,72 +18,78 @@ import (
 	"github.com/mileusna/crontab"
 )
 
-type Result struct {
+// Coming from the runner.sh script to the /api/v1/cron/result endpoint
+type CronJobResult struct {
 	JobID   string `json:"job_id"`
 	ApiKey  string `json:"api_key"`
 	Error   string `json:"error"`
 	Success bool   `json:"success"`
 }
 
-type Trigger struct {
-	JobID     string        `json:"job_id"`
-	ApiKey    string        `json:"api_key"`
-	GraceTime time.Duration `json:"grace_time"` // In seconds
-}
-
 var (
 	influxClient *influx.Influx
 	configClient *config.Config
+	waitingJobs  []config.Job
 )
 
-func checkService(jobID string, minTime *config.Duration, graceTime *config.Duration) (bool, error) {
-	// Wait for min time
-	if minTime != nil {
-		log.Info(jobID, "Waiting for min time")
-		time.Sleep(time.Duration(minTime.Duration))
-		log.Info(jobID, "Min time is over")
+func missingJob(jobID string, graceTime time.Duration) {
+	mail.Send(*configClient, jobID, "Job is missing", false)
+	influxClient.InsertUptimeMissing(context.Background(), configClient, jobID, graceTime)
+}
+
+func failedJob(jobID string, content string) {
+	mail.Send(*configClient, jobID, content, false)
+	influxClient.InsertUptime(context.Background(), configClient, jobID, false, content)
+}
+
+func successJob(jobID string) {
+	influxClient.InsertUptime(context.Background(), configClient, jobID, true, "")
+}
+
+func removeJobFromWaiting(jobID string) {
+	for i, job := range waitingJobs {
+		if job.JobID == jobID {
+			waitingJobs = append(waitingJobs[:i], waitingJobs[i+1:]...)
+		}
 	}
-	// Read from influx
-	success, content, err := influxClient.Read(context.Background(), configClient, jobID, time.Minute)
-	if err != nil {
-		log.Error(err)
-		return false, err
+}
+
+func checkIsJobWaiting(jobID string) bool {
+	for _, job := range waitingJobs {
+		if job.JobID == jobID {
+			return true
+		}
+	}
+	return false
+}
+
+func checkService(job *config.Job) {
+	// Add job to waiting jobs
+	waitingJobs = append(waitingJobs, *job)
+	log.Info("Job added to waiting jobs")
+
+	if job.GraceTime.Duration == 0 {
+		log.Info("This doesnt make sense LOL - But ok")
+		if checkIsJobWaiting(job.JobID) {
+			log.Info("Job is waiting - send mail, log it and remove from waiting")
+			missingJob(job.JobID, job.GraceTime.Duration)
+			removeJobFromWaiting(job.JobID)
+		} else {
+			log.Info("Job is not waiting - everything is ok")
+		}
+		return
 	}
 
-	log.Info("Job: ", jobID, " success: ", success, " content: ", content)
-	log.Info("Real Grace time: ", graceTime)
-	// Check if the job was successful
-	if success {
-		return true, nil
-	}
-	// Check if the grace time is null
-	if graceTime == nil {
-
-		log.Info(jobID, "Grace time is null => send alert")
-		// Send alert
-		mail.Send(*configClient, jobID, content, false)
-		influxClient.InsertUptimeMissing(context.Background(), configClient, jobID)
-		return false, nil
-	}
-
-	// Grace time is not over
-	// TODO: register a new trigger
-	log.Info(jobID, "Grace time is not over")
-	// gracetime - mintime
-	newGraceTime := graceTime.Duration - minTime.Duration
-
-	// log.Info(time.Now().Add(-*graceTime))
 	go func() {
-		// Wait for grace time
-		log.Info(jobID, "Waiting for new grace time:", newGraceTime)
-		// time.Sleep(*graceTime)
-		// config.Duration to time.Duration
-		time.Sleep(newGraceTime)
-		log.Info(jobID, "After grace time => recheck")
-		checkService(jobID, nil, nil)
+		time.Sleep(job.GraceTime.Duration)
+		if checkIsJobWaiting(job.JobID) {
+			log.Info("Job is still waiting AFTER GRACE TIME - send mail, log it and remove from waiting")
+			missingJob(job.JobID, job.GraceTime.Duration)
+			removeJobFromWaiting(job.JobID)
+		} else {
+			log.Info("Job is not waiting AFTER GRACE TIME - everything is ok")
+		}
 	}()
-	return true, nil
-
 }
 
 func main() {
@@ -107,86 +109,19 @@ func main() {
 	configClient = &config.Config{}
 	configClient.Init()
 	log.Init(configClient)
-	influxClient = influx.NewInflux()
+	influxClient = influx.NewInflux(configClient)
 
-	r.HandleFunc("/api/v1/cron/status", func(w http.ResponseWriter, r *http.Request) {
-		// json.NewEncoder(w).Encode(configClient.JOBS)
-		result, err := influxClient.GetAllForAll(context.Background())
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(result)
-	})
+	r.HandleFunc("/api/v1/cron/status", handlerStatusAllFull).Methods("GET", "POST")
 
-	r.HandleFunc("/api/v1/cron/status/last", func(w http.ResponseWriter, r *http.Request) {
-		result, err := influxClient.GetAllLastForAllJobs(context.Background(), configClient)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(result)
-	})
+	r.HandleFunc("/api/v1/cron/status/last", handlerStatusAllLast).Methods("GET", "POST")
 
-	r.HandleFunc("/api/v1/cron/status/job/{jobID}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		jobID := vars["jobID"]
-		result, err := influxClient.GetAllForJob(context.Background(), configClient, jobID)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(result)
-	})
+	r.HandleFunc("/api/v1/cron/status/job/{jobID}", handlerJobStatus).Methods("GET", "POST")
 
-	r.HandleFunc("/api/v1/cron/result", func(w http.ResponseWriter, r *http.Request) {
-		var result Result
-		err := json.NewDecoder(r.Body).Decode(&result)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		log.Info(result)
-		if result.ApiKey != configClient.API_KEY {
-			log.Error("Wrong api key")
-			http.Error(w, "Wrong api key", http.StatusUnauthorized)
-			return
-		}
-		// Check if all the required fields are set
-		if result.JobID == "" {
-			log.Error("JobID is empty")
-			http.Error(w, "JobID is empty", http.StatusBadRequest)
-			return
-		}
-		// If success is false, error is required
-		if !result.Success && result.Error == "" {
-			log.Error("Error is empty")
-			http.Error(w, "Error is empty", http.StatusBadRequest)
-			return
-		}
-		// Check if the job exists
-		if !configClient.JobExists(result.JobID) {
-			log.Error("Job does not exist")
-			http.Error(w, "Job does not exist", http.StatusBadRequest)
-			return
-		}
-		if !result.Success {
-			log.Info("Job failed", result.JobID)
-			mail.Send(*configClient, result.JobID, result.Error, result.Success)
-		}
-		// Write to influx
-		err = influxClient.InsertUptime(context.Background(), configClient, result.JobID, result.Success, result.Error)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, "Writing to influx failed", http.StatusInternalServerError)
-			return
-		}
-		// fmt.Fprintf(w, "Hello, %q", r.URL.Path)
-	})
+	r.HandleFunc("/api/v1/cron/status/waiting", handlerWaitingJobs).Methods("GET", "POST")
+
+	r.HandleFunc("/api/v1/cron/result", handlerCronResult).Methods("POST", "GET")
+
+	r.HandleFunc("/api/v1/trigger/{jobID}", handlerTriggerCheckJob).Methods("GET", "POST")
 
 	// Start the server
 	go func() {
@@ -198,13 +133,10 @@ func main() {
 
 	// Register Jobs
 	go func() {
-
 		log.Info("Registering jobs...")
 		for _, job := range configClient.JOBS {
 			log.Info("Registering job: ", job)
-			crontab.New().MustAddJob(job.Cron, checkService, job.JobID, &job.MinTime, &job.GraceTime)
-			// checkService(job.JobID, nil, nil)
-			// checkService(influx, trigger.JobID, &trigger.GraceTime, &config)
+			crontab.New().MustAddJob(job.Cron, checkService, &job)
 		}
 	}()
 

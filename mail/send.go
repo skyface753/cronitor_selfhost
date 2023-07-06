@@ -9,6 +9,9 @@ import (
 )
 
 func Send(config config.Config, job_id string, output string, result bool) {
+	if !config.MAIL_ENABLED {
+		return
+	}
 	// Check if all the required fields are set
 	if !config.ValideForMailEnabled() {
 		log.Info("SMTP_HOST, SMTP_PORT, SMTP_FROM and SMTP_TO must be set")
