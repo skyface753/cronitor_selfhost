@@ -15,7 +15,7 @@ import (
 	"github.com/skyface753/cronitor_selfhost/mail"
 	log "github.com/skyface753/cronitor_selfhost/skyLog"
 
-	"github.com/mileusna/crontab"
+	//	"github.com/mileusna/crontab"
 )
 
 // Coming from the runner.sh script to the /api/v1/cron/result endpoint
@@ -49,7 +49,15 @@ func successJob(jobID string) {
 func removeJobFromWaiting(jobID string) {
 	for i, job := range waitingJobs {
 		if job.JobID == jobID {
-			waitingJobs = append(waitingJobs[:i], waitingJobs[i+1:]...)
+			// Fix error: panic: runtime error: slice bounds out of range [3:1]
+			if i == 0 {
+				waitingJobs = waitingJobs[1:]
+			} else if i == len(waitingJobs)-1 {
+				waitingJobs = waitingJobs[:i]
+			} else {
+				waitingJobs = append(waitingJobs[:i], waitingJobs[i+1:]...)
+			}
+			return
 		}
 	}
 }
@@ -66,8 +74,8 @@ func checkIsJobWaiting(jobID string) bool {
 func checkService(job *config.Job) {
 	// Add job to waiting jobs
 	waitingJobs = append(waitingJobs, *job)
-	log.Info("Job added to waiting jobs")
-
+	log.Info(job.JobID, "Job added to waiting jobs")
+	time.Sleep(5 * time.Second)
 	if job.GraceTime.Duration == 0 {
 		log.Info("This doesnt make sense LOL - But ok")
 		if checkIsJobWaiting(job.JobID) {
@@ -132,13 +140,13 @@ func main() {
 	}()
 
 	// Register Jobs
-	go func() {
-		log.Info("Registering jobs...")
-		for _, job := range configClient.JOBS {
-			log.Info("Registering job: ", job)
-			crontab.New().MustAddJob(job.Cron, checkService, &job)
-		}
-	}()
+	// go func() {
+	// 	log.Info("Registering jobs...")
+	// 	for _, job := range configClient.JOBS {
+	// 		log.Info("Registering job: ", job)
+	// 		crontab.New().MustAddJob(job.Cron, checkService, &job)
+	// 	}
+	// }()
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

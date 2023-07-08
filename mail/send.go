@@ -9,7 +9,7 @@ import (
 )
 
 func Send(config config.Config, job_id string, output string, result bool) {
-	if !config.MAIL_ENABLED {
+	if config.MAIL_DISABLED {
 		return
 	}
 	// Check if all the required fields are set

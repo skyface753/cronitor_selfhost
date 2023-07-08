@@ -22,6 +22,7 @@ services:
       PRODUCTION: true
       TZ: Europe/Berlin
       DEBUG: true
+      MAIL_DISABLED: ${MAIL_DISABLED}
     restart: unless-stopped
     depends_on:
       influxdb:
@@ -35,6 +36,7 @@ services:
     ports:
       - '127.0.0.1:8086:8086'
     environment:
+      TZ: Europe/Berlin
       DOCKER_INFLUXDB_INIT_MODE: setup
       INFLUXDB_HTTP_LOG_ENABLED: false
       INFLUXDB_DATA_QUERY_LOG_ENABLED: false

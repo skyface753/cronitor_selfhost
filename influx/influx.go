@@ -255,7 +255,12 @@ func (i *Influx) GetAllForAll(ctx context.Context) (UptimeDataForAllJobsMap, err
 					val[result.Record().Time()] = UptimeData{}
 				}
 				uptimedata := val[result.Record().Time()]
-				uptimedata.Content = result.Record().Value().(string)
+				// Check for nil
+				if result.Record().Value() == nil {
+					uptimedata.Content = ""
+				} else {
+					uptimedata.Content = result.Record().Value().(string)
+				}
 				val[result.Record().Time()] = uptimedata
 
 			default:
