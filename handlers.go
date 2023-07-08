@@ -6,10 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/skyface753/cronitor_selfhost/influx"
 	log "github.com/skyface753/cronitor_selfhost/skyLog"
 )
 
 func handlerCronResult(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	var result CronJobResult
 	err := json.NewDecoder(r.Body).Decode(&result)
 	if err != nil {
@@ -53,6 +55,8 @@ func handlerCronResult(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerWaitingJobs(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	// Dont return null if there are no waiting jobs
 	if len(waitingJobs) == 0 {
 		json.NewEncoder(w).Encode([]string{})
@@ -62,6 +66,8 @@ func handlerWaitingJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerJobStatus(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 	result, err := influxClient.GetAllForJob(context.Background(), configClient, jobID)
@@ -74,6 +80,8 @@ func handlerJobStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerStatusAllLast(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	result, err := influxClient.GetAllLastForAllJobs(context.Background(), configClient)
 	if err != nil {
 		log.Error(err)
@@ -84,17 +92,28 @@ func handlerStatusAllLast(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerStatusAllFull(w http.ResponseWriter, r *http.Request) {
-	// json.NewEncoder(w).Encode(configClient.JOBS)
+	enableCors(&w)
+
 	result, err := influxClient.GetAllForAll(context.Background())
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Add all the jobs that are not in the database
+	for _, job := range configClient.JOBS {
+		if _, ok := result[job.JobID]; !ok {
+			result[job.JobID] = influx.UptimeDataMap{}
+		}
+	}
+
 	json.NewEncoder(w).Encode(result)
 }
 
 func handlerTriggerCheckJob(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 	// Check if the job exists

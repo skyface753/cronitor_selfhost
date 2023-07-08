@@ -14,7 +14,6 @@ import (
 	"github.com/skyface753/cronitor_selfhost/influx"
 	"github.com/skyface753/cronitor_selfhost/mail"
 	log "github.com/skyface753/cronitor_selfhost/skyLog"
-
 	//	"github.com/mileusna/crontab"
 )
 
@@ -44,6 +43,10 @@ func failedJob(jobID string, content string) {
 
 func successJob(jobID string) {
 	influxClient.InsertUptime(context.Background(), configClient, jobID, true, "")
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func removeJobFromWaiting(jobID string) {
