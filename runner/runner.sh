@@ -25,18 +25,17 @@ for i in "$@"; do
 done
 # Run the command and store the output, store stdout and stderr in different variables
 
-ERROR=$(eval $C 2>&1 >/dev/null)
-
-# OUTPUT=$(eval $C)
-# echo "${OUTPUT}"
-
 BOOL="true"
-# If ERROR is not empty, the command failed, so set the boolean to false
-if [ -n "${ERROR}" ]; then
+if output=$(eval $C 2>&1 >/dev/null); then
+    echo "Command succeeded"
+    BOOL="true"
+else
+    echo "Command failed"
     BOOL="false"
 fi
+
 # Remove all newlines from the output
-ERROR=$(echo "${ERROR}" | tr -d '\n')
+ERROR=$(echo "${output}" | tr -d '\n')
 sleep 5
 API_RUNNER_ENDPOINT=${API_ENDPOINT}cron/result
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
