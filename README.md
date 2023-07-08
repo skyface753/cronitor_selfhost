@@ -4,7 +4,9 @@ make the runner/runner.sh executable
 chmod +x runner/runner.sh
 ```
 
-wrap all your crontab commands with the runner/runner.sh script
+Edit the `runner/config.sh` file and set the API_ENDPOINT and API_KEY
+<br><br>
+Then wrap all your crontab commands with the runner/runner.sh script
 
 ```bash
 crontab -e
