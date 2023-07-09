@@ -12,7 +12,7 @@ import (
 
 type Config struct {
 	API_KEY              string
-	MAIL_DISABLED         bool
+	MAIL_DISABLED        bool
 	SMTP_HOST            string
 	SMTP_PORT            string
 	SMTP_USERNAME        string
@@ -61,7 +61,7 @@ func (duration *Duration) UnmarshalJSON(b []byte) error {
 // From environment variables
 func (c *Config) Init() {
 	c.API_KEY = os.Getenv("API_KEY")
-	c.MAIL_DISABLED = os.Getenv("MAIL_DISABLED") == "true" 
+	c.MAIL_DISABLED = os.Getenv("MAIL_DISABLED") == "true"
 	c.SMTP_HOST = os.Getenv("SMTP_HOST")
 	c.SMTP_PORT = os.Getenv("SMTP_PORT")
 	c.SMTP_USERNAME = os.Getenv("SMTP_USERNAME")

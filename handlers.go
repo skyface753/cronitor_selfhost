@@ -10,6 +10,17 @@ import (
 	log "github.com/skyface753/cronitor_selfhost/skyLog"
 )
 
+// CronJobResult ... Result from the runner.sh script
+// @Summary CronJobResult
+// @Description Result from the runner script
+// @Tags Jobs
+// @Accept json
+// @Produce json
+// @Param CronJobResult body CronJobResult true "CronJobResult"
+// @Success 200 {object} string "OK"
+// @Failure 400 {object} string "Bad Request"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /cron/result [post]
 func handlerCronResult(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	var result CronJobResult
@@ -52,8 +63,18 @@ func handlerCronResult(w http.ResponseWriter, r *http.Request) {
 	}
 	// Remove job from waiting
 	removeJobFromWaiting(result.JobID)
+	w.WriteHeader(http.StatusOK)
+
 }
 
+// WaitingJobs ... Get all waiting jobs
+// @Summary Get all waiting jobs
+// @Description Get all waiting jobs
+// @Tags Jobs
+// @Accept json
+// @Success 200 {object} []config.Job
+// @Failure 400,500 {object} object
+// @Router /cron/status/waiting [get]
 func handlerWaitingJobs(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
@@ -65,6 +86,15 @@ func handlerWaitingJobs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// JobStatus ... Get all data for a job
+// @Summary Get all data for a job
+// @Description Get all data for a job
+// @Tags Jobs
+// @Accept json
+// @Param jobID path string true "Job ID"
+// @Success 200 {object} influx.UptimeDataMap
+// @Failure 400,500 {object} object
+// @Router /cron/status/job/{jobID} [get]
 func handlerJobStatus(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
@@ -79,9 +109,16 @@ func handlerJobStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+// StatusAllLast ... Get last data for all jobs
+// @Summary Get last data for all jobs
+// @Description Get last data for all jobs
+// @Tags Jobs
+// @Accept json
+// @Success 200 {object} object
+// @Failure 400,500 {object} object
+// @Router /cron/status/last [get]
 func handlerStatusAllLast(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-
 	result, err := influxClient.GetAllLastForAllJobs(context.Background(), configClient)
 	if err != nil {
 		log.Error(err)
@@ -91,7 +128,15 @@ func handlerStatusAllLast(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
-func handlerStatusAllFull(w http.ResponseWriter, r *http.Request) {
+// StatusAllFull ... Get all the data for all jobs
+// @Summary Get all the data for all jobs
+// @Description Get all the data for all jobs
+// @Tags Jobs
+// @Accept json
+// @Success 200 {object} influx.UptimeDataForAllJobsMap
+// @Failure 400,500 {object} object
+// @Router /cron/status [get]
+func handlerStatusAllFull(w http.ResponseWriter, r *http.Request) { // Result is influx.UptimeDataForAllJobsMap
 	enableCors(&w)
 
 	result, err := influxClient.GetAllForAll(context.Background())
@@ -111,6 +156,15 @@ func handlerStatusAllFull(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+// TriggerCheckJob ... Trigger a check for a job
+// @Summary Trigger a check for a job
+// @Description Trigger a check for a job
+// @Tags Jobs
+// @Accept json
+// @Param jobID path string true "Job ID"
+// @Success 200 {object} string
+// @Failure 400,500 {object} object
+// @Router /trigger/{jobID} [get]
 func handlerTriggerCheckJob(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 

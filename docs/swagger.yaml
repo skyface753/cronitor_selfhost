@@ -1,0 +1,200 @@
+basePath: /api/v1
+definitions:
+  config.Duration:
+    properties:
+      time.Duration:
+        type: integer
+    type: object
+  config.Job:
+    properties:
+      cron:
+        type: string
+      grace_time:
+        allOf:
+        - $ref: '#/definitions/config.Duration'
+        description: In seconds
+      job_id:
+        type: string
+    type: object
+  influx.UptimeData:
+    properties:
+      content:
+        type: string
+      success:
+        type: boolean
+    type: object
+  influx.UptimeDataForAllJobsMap:
+    additionalProperties:
+      $ref: '#/definitions/influx.UptimeDataMap'
+    type: object
+  influx.UptimeDataMap:
+    additionalProperties:
+      $ref: '#/definitions/influx.UptimeData'
+    type: object
+  main.CronJobResult:
+    properties:
+      api_key:
+        type: string
+      error:
+        type: string
+      job_id:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  title: User API documentation
+  version: 1.0.0
+paths:
+  /cron/result:
+    post:
+      consumes:
+      - application/json
+      description: Result from the runner script
+      parameters:
+      - description: CronJobResult
+        in: body
+        name: CronJobResult
+        required: true
+        schema:
+          $ref: '#/definitions/main.CronJobResult'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: CronJobResult
+      tags:
+      - Jobs
+  /cron/status:
+    get:
+      consumes:
+      - application/json
+      description: Get all the data for all jobs
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/influx.UptimeDataForAllJobsMap'
+        "400":
+          description: Bad Request
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: Get all the data for all jobs
+      tags:
+      - Jobs
+  /cron/status/job/{jobID}:
+    get:
+      consumes:
+      - application/json
+      description: Get all data for a job
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/influx.UptimeDataMap'
+        "400":
+          description: Bad Request
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: Get all data for a job
+      tags:
+      - Jobs
+  /cron/status/last:
+    get:
+      consumes:
+      - application/json
+      description: Get last data for all jobs
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: Get last data for all jobs
+      tags:
+      - Jobs
+  /cron/status/waiting:
+    get:
+      consumes:
+      - application/json
+      description: Get all waiting jobs
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/config.Job'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: Get all waiting jobs
+      tags:
+      - Jobs
+  /trigger/{jobID}:
+    get:
+      consumes:
+      - application/json
+      description: Trigger a check for a job
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: Trigger a check for a job
+      tags:
+      - Jobs
+swagger: "2.0"
