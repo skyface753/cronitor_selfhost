@@ -36,7 +36,13 @@ fi
 
 # Remove all newlines from the output
 ERROR=$(echo "${output}" | tr -d '\n')
-sleep 5
+# Remove quotes
+ERROR=$(echo "${ERROR}" | tr -d '"')
+# Remove backslashes
+ERROR=$(echo "${ERROR}" | tr -d '\\')
+
+#sleep 5
+echo $ERROR
 API_RUNNER_ENDPOINT=${API_ENDPOINT}cron/result
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
 curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"error\":\"${ERROR}\",\"success\":${BOOL}}" ${API_RUNNER_ENDPOINT}
