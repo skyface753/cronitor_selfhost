@@ -16,6 +16,10 @@ import (
 	log "github.com/skyface753/cronitor_selfhost/skyLog"
 
 	//	"github.com/mileusna/crontab"
+
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+
+	_ "github.com/skyface753/cronitor_selfhost/docs"
 )
 
 // Coming from the runner.sh script to the /api/v1/cron/result endpoint
@@ -44,6 +48,10 @@ func failedJob(jobID string, content string) {
 
 func successJob(jobID string) {
 	influxClient.InsertUptime(context.Background(), configClient, jobID, true, "")
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func removeJobFromWaiting(jobID string) {
@@ -100,6 +108,10 @@ func checkService(job *config.Job) {
 	}()
 }
 
+// @title User API documentation
+// @version 1.0.0
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	// Create a new router
 	r := mux.NewRouter()
@@ -130,6 +142,8 @@ func main() {
 	r.HandleFunc("/api/v1/cron/result", handlerCronResult).Methods("POST", "GET")
 
 	r.HandleFunc("/api/v1/trigger/{jobID}", handlerTriggerCheckJob).Methods("GET", "POST")
+
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	// Start the server
 	go func() {

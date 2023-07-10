@@ -1,0 +1,36 @@
+.cloud-container {
+  margin: auto;
+  margin-top: 40px;
+}
+
+.cloud-back,
+.cloud-front {
+  stroke-width: 0.5;
+  fill: none;
+}
+
+.cloud-back {
+  stroke: rgb(0, 162, 255);
+}
+
+.cloud-front {
+  stroke: #eee;
+  stroke-dashoffset: 0; /*END 40 */
+  stroke-dasharray: 69, 12;
+  animation: cloudLoader 3s linear infinite;
+  animation-fill-mode: forwards;
+}
+
+@keyframes cloudLoader {
+  0% {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 69, 12;
+  }
+  50% {
+    stroke-dasharray: 40;
+  }
+  100% {
+    stroke-dashoffset: -82;
+    stroke-dasharray: 69, 12;
+  }
+}
