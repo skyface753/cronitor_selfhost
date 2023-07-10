@@ -123,11 +123,13 @@ func (i *Influx) GetAllLastForAllJobs(ctx context.Context, config *config.Config
 
 			switch field := result.Record().Field(); field {
 			case "success":
-				// val.avg = result.Record().Value().(float64)
 				val["success"] = result.Record().Value().(bool)
 			case "content":
-				// val.max = result.Record().Value().(float64)
-				val["content"] = result.Record().Value().(string)
+				if result.Record().Value() == nil {
+					val["content"] = ""
+				} else {
+					val["content"] = result.Record().Value().(string)
+				}
 			default:
 				log.Error("unrecognized field ", field)
 			}
