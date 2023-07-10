@@ -94,59 +94,6 @@ func (i *Influx) Read(ctx context.Context, config *config.Config, job_id string,
 	return isSuccess, content, nil
 }
 
-func (i *Influx) GetAllLastForAllJobs(ctx context.Context, config *config.Config) (map[string]map[string]interface{}, error) {
-	// query data from influx
-	query := `from(bucket: "my-bucket")
-	|> range(start: -24h, stop: now())
-	|> filter(fn: (r) => r._measurement == "uptime")
-	|> last()`
-	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
-
-	result, err := i.queryAPI.Query(ctx, query)
-	// Putting back the data in share requires a bit of work
-	var resultPoints = make(map[string]map[string]interface{})
-
-	if err == nil {
-		// Iterate over query response
-		for result.Next() {
-			// Notice when group key has changed
-			// if result.TableChanged() {
-			// 	// log.Info("table: ", result.TableMetadata().String())
-			// }
-
-			val, ok := resultPoints[result.Record().ValueByKey("job_id").(string)]
-
-			if !ok {
-				val = make(map[string]interface{})
-
-			}
-
-			switch field := result.Record().Field(); field {
-			case "success":
-				val["success"] = result.Record().Value().(bool)
-			case "content":
-				if result.Record().Value() == nil {
-					val["content"] = ""
-				} else {
-					val["content"] = result.Record().Value().(string)
-				}
-			default:
-				log.Error("unrecognized field ", field)
-			}
-
-			// resultPoints[result.Record().Time()] = val
-			resultPoints[result.Record().ValueByKey("job_id").(string)] = val
-
-		}
-		// check for an error
-		if result.Err() != nil {
-			log.Error("query parsing error: ", result.Err().Error())
-		}
-	} else {
-		panic(err)
-	}
-	return resultPoints, err
-}
 
 // Type for the data returned by GetAllForJob
 type UptimeData struct {
@@ -214,11 +161,18 @@ func (i *Influx) GetAllForJob(ctx context.Context, config *config.Config, jobID 
 	return resultPoints, err
 }
 
-func (i *Influx) GetAllForAll(ctx context.Context) (UptimeDataForAllJobsMap, error) {
+func (i *Influx) GetAllForAll(ctx context.Context, justLast bool) (UptimeDataForAllJobsMap, error) {
 	// query data from influx
 	query := `from(bucket: "my-bucket")
 	|> range(start: -24h, stop: now())
 	|> filter(fn: (r) => r._measurement == "uptime")`
+
+	if justLast {
+		query = `from(bucket: "my-bucket")
+		|> range(start: -24h, stop: now())
+		|> filter(fn: (r) => r._measurement == "uptime")
+		|> last()`
+	}
 
 	// Log query without \n and \t
 	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
@@ -229,16 +183,10 @@ func (i *Influx) GetAllForAll(ctx context.Context) (UptimeDataForAllJobsMap, err
 	if err == nil {
 		// Iterate over query response
 		for result.Next() {
-			// Notice when group key has changed
-			// if result.TableChanged() {
-			// 	// fmt.Printf("table: %s\n", result.TableMetadata().String())
-			// 	// log.Info("table: ", result.TableMetadata().String())
-			// }
 
 			val, ok := resultPoints[result.Record().ValueByKey("job_id").(string)]
 
 			if !ok {
-				// val = make(map[string]interface{})
 				val = UptimeDataMap{}
 
 			}

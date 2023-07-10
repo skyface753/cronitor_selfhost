@@ -119,12 +119,20 @@ func handlerJobStatus(w http.ResponseWriter, r *http.Request) {
 // @Router /cron/status/last [get]
 func handlerStatusAllLast(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-	result, err := influxClient.GetAllLastForAllJobs(context.Background(), configClient)
+	result, err := influxClient.GetAllForAll(context.Background(), true)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Add all the jobs that are not in the database
+	for _, job := range configClient.JOBS {
+		if _, ok := result[job.JobID]; !ok {
+			result[job.JobID] = influx.UptimeDataMap{}
+		}
+	}
+
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -139,7 +147,7 @@ func handlerStatusAllLast(w http.ResponseWriter, r *http.Request) {
 func handlerStatusAllFull(w http.ResponseWriter, r *http.Request) { // Result is influx.UptimeDataForAllJobsMap
 	enableCors(&w)
 
-	result, err := influxClient.GetAllForAll(context.Background())
+	result, err := influxClient.GetAllForAll(context.Background(), false)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
