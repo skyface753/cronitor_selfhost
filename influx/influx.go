@@ -87,13 +87,11 @@ func (i *Influx) Read(ctx context.Context, config *config.Config, job_id string,
 			log.Error("Unknown field: ", result.Record().Field())
 		}
 	}
-	// log.Info("success: ", isSuccess, " content: ", content)
 	if result.Err() != nil {
 		return false, "", result.Err()
 	}
 	return isSuccess, content, nil
 }
-
 
 // Type for the data returned by GetAllForJob
 type UptimeData struct {
@@ -110,8 +108,7 @@ func (i *Influx) GetAllForJob(ctx context.Context, config *config.Config, jobID 
 	|> range(start: -24h, stop: now())
 	|> filter(fn: (r) => r._measurement == "uptime" and r.job_id == "` + jobID + `")`
 
-	// Log query without \n and \t
-	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
+	log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
 	result, err := i.queryAPI.Query(ctx, query)
 
 	// var resultPoints = make(map[time.Time]map[string]interface{})
@@ -119,26 +116,18 @@ func (i *Influx) GetAllForJob(ctx context.Context, config *config.Config, jobID 
 	if err == nil {
 		// Iterate over query response
 		for result.Next() {
-			// Notice when group key has changed
-			// if result.TableChanged() {
-			// 	// fmt.Printf("table: %s\n", result.TableMetadata().String())
-			// 	// log.Info("table: ", result.TableMetadata().String())
-			// }
 
 			val, ok := resultPoints[result.Record().Time()]
 
 			if !ok {
-				// val = make(map[string]interface{})
 				val = UptimeData{}
 
 			}
 
 			switch field := result.Record().Field(); field {
 			case "success":
-				// val["success"] = result.Record().Value().(bool)
 				val.Success = result.Record().Value().(bool)
 			case "content":
-				// Fix "interface {} is nil, not string" error
 				if result.Record().Value() == nil {
 					val.Content = ""
 				} else {
@@ -175,10 +164,9 @@ func (i *Influx) GetAllForAll(ctx context.Context, justLast bool) (UptimeDataFor
 	}
 
 	// Log query without \n and \t
-	// log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
+	log.Info(strings.ReplaceAll(strings.ReplaceAll(query, "\n", ""), "\t", ""))
 	result, err := i.queryAPI.Query(ctx, query)
 
-	// var resultPoints = make(map[time.Time]map[string]interface{})
 	var resultPoints = make(map[string]UptimeDataMap)
 	if err == nil {
 		// Iterate over query response
