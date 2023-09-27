@@ -108,7 +108,7 @@ func checkService(job *config.Job) {
 	}()
 }
 
-// @title User API documentation
+// @title Cronitor Selfhost API
 // @version 1.0.0
 // @host localhost:8080
 // @BasePath /api/v1
