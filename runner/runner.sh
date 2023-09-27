@@ -46,3 +46,10 @@ echo $ERROR
 API_RUNNER_ENDPOINT=${API_ENDPOINT}cron/result
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
 curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"error\":\"${ERROR}\",\"success\":${BOOL}}" ${API_RUNNER_ENDPOINT}
+# If the BOOL is true, the command succeeded, so return 0, otherwise return 1
+if [ "$BOOL" = "true" ]; then
+    exit 0
+else
+    echo "Command failed" >&2
+    exit 1
+fi
