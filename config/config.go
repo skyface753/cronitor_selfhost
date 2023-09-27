@@ -73,17 +73,19 @@ func (c *Config) Init() {
 	c.INFLUXDB_ADMIN_TOKEN = os.Getenv("INFLUXDB_ADMIN_TOKEN")
 	c.DEBUG = os.Getenv("DEBUG") == "true" || os.Getenv("DEBUG") == "1" || os.Getenv("DEBUG") == "TRUE"
 	log.Info("DEBUG: ", c.DEBUG)
+	if c.DEBUG {
+		log.Println(fmt.Sprintf("%#v", c))
+	}
 	if !c.ValideForMailEnabled() {
 		log.Warn("Mail is not enabled")
 	}
 
 	c.ReadJobsJSON()
-
 }
 
 // Jobs from config file (jobs.json)
 func (c *Config) ReadJobsJSON() {
-	jsonFile, err := os.Open("/jobs.json")
+	jsonFile, err := os.Open("./jobs.json")
 	if err != nil {
 		log.Error(err)
 		return

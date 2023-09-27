@@ -1,7 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+* {
+  box-sizing: border-box;
+}
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -24,4 +26,136 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+/* Float four columns side by side */
+.column {
+  float: left;
+  width: 25%;
+  padding: 10px 10px;
+}
+
+/* Remove extra left and right margins, due to padding in columns */
+.row {
+  margin: 0 -5px;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+/* Style the counter cards */
+.card {
+  box-shadow: 0 6px 10px 0 rgba(var(--foreground-rgb), 0.2);
+  padding: 16px;
+  text-align: center;
+  background-color: rgb(var(--background-end-rgb));
+}
+
+/* Responsive columns - one column layout (vertical) on small screens */
+@media screen and (max-width: 600px) {
+  .column {
+    width: 100%;
+    display: block;
+    margin-bottom: 20px;
+  }
+}
+
+.list {
+  border-top: groove;
+  border-color: rgb(var(--foreground-rgb));
+}
+/* ---- */
+
+/* Horizontal list */
+.hlist {
+  display: flex;
+  flex-direction: row;
+  justify-content: right;
+  align-items: center;
+  /* overflow-x: hidden; */
+  flex-wrap: wrap;
+}
+.dot {
+  height: 25px;
+  width: 25px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 2px;
+}
+.green {
+  background-color: green;
+}
+.red {
+  background-color: red;
+}
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  /* Position the tooltip text */
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+
+  /* Fade in tooltip */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Tooltip arrow */
+.tooltip .tooltiptext::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+.res-table {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid rgb(var(--foreground-rgb));
+  margin-top: 10px;
+}
+
+.res-table-head {
+  background-color: rgb(var(--background-end-rgb));
+  color: rgb(var(--foreground-rgb));
+  text-align: left;
+  padding: 8px;
+}
+
+.res-table-body {
+  color: rgb(var(--foreground-rgb));
+  text-align: left;
+  padding: 8px;
 }

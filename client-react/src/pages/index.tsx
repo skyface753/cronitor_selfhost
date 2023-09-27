@@ -4,46 +4,23 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { API_URL } from '@/utils/constants';
 import { SkyLoader } from '@/components/loader/skyloader';
+import { Job } from '@/utils/types';
+import { getCrons } from '@/utils/api';
 
 const inter = Inter({ subsets: ['latin'] });
-
-type Job = {
-  jobid: string;
-  results: Result[];
-};
-type Result = {
-  timestamp: string;
-  success: boolean;
-  content: string;
-};
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function getCrons() {
-    const { data } = await axios.get(API_URL + '/cron/status');
-    console.log(data); // {"certbot":{"2023-07-08T14:25:42.331655051Z":{"Success":true,"Content":""},"2023-07-08T14:30:03.194482797Z":{"Success":true,"Content":""}}}
-    const jobs: Job[] = [];
-    for (let i = 0; i < Object.keys(data).length; i++) {
-      const jobid = Object.keys(data)[i];
-      const results: Result[] = [];
-      for (let j = 0; j < Object.keys(data[jobid]).length; j++) {
-        const timestamp = Object.keys(data[jobid])[j];
-        const success = data[jobid][timestamp].Success;
-        const content = data[jobid][timestamp].Content;
-        results.push({ timestamp, success, content });
-      }
-      jobs.push({ jobid, results });
-    }
-
-    setJobs(jobs);
+  async function loadCrons() {
+    setJobs(await getCrons());
     setLoading(false);
   }
 
   useEffect(() => {
     setLoading(true);
-    getCrons();
+    loadCrons();
   }, []);
 
   if (loading) {
@@ -55,20 +32,49 @@ export default function Home() {
   return (
     <main>
       <div>
-        {jobs.map((job) => (
-          <div key={job.jobid}>
-            <h1>{job.jobid}</h1>
-            <ul>
-              {job.results.map((result) => (
-                <li key={result.timestamp}>
-                  {result.timestamp} - {result.success.toString()}{' '}
-                  {result.content && '-'}
-                  {result.content}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <div className='row'>
+          {jobs.map((job) => (
+            <div className='column' key={job.jobid}>
+              <div className='card'>
+                <a href={`/jobs/${job.jobid}`}>
+                  <h1>{job.jobid}</h1>
+                  {/* If last => print ELSE show nothing */}
+                  {job.results.length > 0 && (
+                    <p>
+                      {Intl.DateTimeFormat('de-DE', {
+                        dateStyle: 'medium',
+                        timeStyle: 'medium',
+                      }).format(
+                        new Date(job.results[job.results.length - 1].timestamp)
+                      )}
+                      <br />
+                      {'Success: '}
+                      {job.results[job.results.length - 1].success.toString()}
+                      <br />
+                      {job.results[job.results.length - 1].content}
+                    </p>
+                  )}
+                </a>
+
+                <ul className='hlist'>
+                  {job.results.map((result) => (
+                    <li key={result.timestamp}>
+                      <span
+                        className={`dot tooltip ${
+                          result.success ? 'green' : 'red'
+                        }`}
+                      >
+                        <span className='tooltiptext'>
+                          {result.timestamp} - {result.content}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );

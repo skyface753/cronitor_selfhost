@@ -115,9 +115,9 @@ func checkService(job *config.Job) {
 func main() {
 	// Create a new router
 	r := mux.NewRouter()
-	addr := "127.0.0.1:8080"
+	addr := "127.0.0.1:8123"
 	if os.Getenv("PRODUCTION") == "true" {
-		addr = "0.0.0.0:8080"
+		addr = "0.0.0.0:8123"
 	}
 	// Create a new server
 	srv := &http.Server{
@@ -147,7 +147,7 @@ func main() {
 
 	// Start the server
 	go func() {
-		log.Info("Server started on port 8080")
+		log.Info("Server started on port 8123")
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
