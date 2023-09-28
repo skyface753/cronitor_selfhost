@@ -34,10 +34,10 @@ export default function Home() {
       <div>
         <div className='row'>
           {jobs.map((job) => (
-            <div className='column' key={job.jobid}>
+            <div className='column' key={job.job_id}>
               <div className='card'>
-                <a href={`/jobs/${job.jobid}`}>
-                  <h1>{job.jobid}</h1>
+                <a href={`/jobs/${job.job_id}`}>
+                  <h1>{job.job_id}</h1>
                   {/* If last => print ELSE show nothing */}
                   {job.results.length > 0 && (
                     <p>
@@ -51,7 +51,7 @@ export default function Home() {
                       {'Success: '}
                       {job.results[job.results.length - 1].success.toString()}
                       <br />
-                      {job.results[job.results.length - 1].content}
+                      {job.results[job.results.length - 1].message}
                     </p>
                   )}
                 </a>
@@ -65,7 +65,7 @@ export default function Home() {
                         }`}
                       >
                         <span className='tooltiptext'>
-                          {result.timestamp} - {result.content}
+                          {result.timestamp} - {result.message}
                         </span>
                       </span>
                     </li>

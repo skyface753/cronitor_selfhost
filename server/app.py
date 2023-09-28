@@ -119,7 +119,7 @@ def list_all_jobs(request: Request):
     jobResults = []
     for job in jobs:
         jobResults.append({"job_id": job["id"], "results": get_results_for_a_job(job["id"], request, 10)})
-    print(jobResults)
+    # print(jobResults)
     return jobResults
 
 

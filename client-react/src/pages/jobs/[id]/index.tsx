@@ -74,7 +74,7 @@ export default function Page() {
                   }).format(new Date(result.timestamp))}
                 </td>
                 <td>{result.success.toString()}</td>
-                <td>{result.content}</td>
+                <td>{result.message}</td>
               </tr>
             ))}
         </tbody>
