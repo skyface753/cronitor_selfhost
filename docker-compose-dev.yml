@@ -1,23 +1,53 @@
 services:
-  influxdb:
-    image: influxdb:latest
+  mongodb:
+    image: mongo:latest
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
     ports:
-      - '127.0.0.1:8086:8086'
+      - '27017:27017'
     environment:
       TZ: Europe/Berlin
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      INFLUXDB_HTTP_LOG_ENABLED: false
-      INFLUXDB_DATA_QUERY_LOG_ENABLED: false
-      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
-      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
-      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
     healthcheck:
-      test: 'curl -f http://localhost:8086/ping'
+      test: 'curl -f http://localhost:27017'
       interval: 5s
       timeout: 10s
       retries: 5
+
+  express:
+    image: mongo-express:latest
+    ports:
+      - '8081:8081'
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+
+  # influxdb:
+  #   image: influxdb:latest
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   restart: unless-stopped
+  #   ports:
+  #     - '127.0.0.1:8086:8086'
+  #   environment:
+  #     TZ: Europe/Berlin
+  #     DOCKER_INFLUXDB_INIT_MODE: setup
+  #     INFLUXDB_HTTP_LOG_ENABLED: false
+  #     INFLUXDB_DATA_QUERY_LOG_ENABLED: false
+  #     DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
+  #     DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+  #     DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+  #     DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+  #     DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+  #   healthcheck:
+  #     test: 'curl -f http://localhost:8086/ping'
+  #     interval: 5s
+  #     timeout: 10s
+  #     retries: 5

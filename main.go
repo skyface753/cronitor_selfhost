@@ -143,7 +143,7 @@ func main() {
 
 	r.HandleFunc("/api/v1/trigger/{jobID}", handlerTriggerCheckJob).Methods("GET", "POST")
 
-	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	r.PathPrefix("/docs").Handler(httpSwagger.WrapHandler)
 
 	// Start the server
 	go func() {
