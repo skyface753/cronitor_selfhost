@@ -60,6 +60,7 @@ export default function Page() {
           <tr>
             <th>Timestamp</th>
             <th>Success</th>
+            <th>Command</th>
             <th>Content</th>
           </tr>
         </thead>
@@ -74,6 +75,7 @@ export default function Page() {
                   }).format(new Date(result.timestamp))}
                 </td>
                 <td>{result.success.toString()}</td>
+                <td>{result.command}</td>
                 <td>{result.message}</td>
               </tr>
             ))}

@@ -26,7 +26,8 @@ done
 # Run the command and store the output, store stdout and stderr in different variables
 
 BOOL="true"
-if output=$(eval $C 2>&1 >/dev/null); then
+# if output=$(eval $C 2>&1 >/dev/null); then
+if output=$(eval $C 2>&1); then
     echo "Command succeeded"
     BOOL="true"
 else
@@ -41,13 +42,17 @@ ERROR=$(echo "${ERROR}" | tr -d '"')
 # Remove backslashes
 ERROR=$(echo "${ERROR}" | tr -d '\\')
 
+COMMAND=$(echo "${C}" | tr -d '\n')
+COMMAND=$(echo "${COMMAND}" | tr -d '"')
+COMMAND=$(echo "${COMMAND}" | tr -d '\\')
+# Remove single quotes
+COMMAND=$(echo "${COMMAND}" | tr -d "'")
+
 #sleep 5
 echo $ERROR
-API_RUNNER_ENDPOINT=${API_ENDPOINT}cron/result
+API_RUNNER_ENDPOINT=${API_ENDPOINT}jobs/${JOB_ID}
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
-curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"job_id\":\"${JOB_ID}\",\"error\":\"${ERROR}\",\"success\":${BOOL}}" ${API_RUNNER_ENDPOINT}
-# API test curl
-curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"apikey123\",\"job_id\":\"certbot\",\"error\":\"error123\",\"success\":true}" "http://localhost:8123/api/v1/cron/result"
+curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"jobResult\":{\"job_id\":\"${JOB_ID}\",\"message\":\"${ERROR}\",\"success\":${BOOL},\"command\":\"${COMMAND}\"}}" ${API_RUNNER_ENDPOINT}
 # If the BOOL is true, the command succeeded, so return 0, otherwise return 1
 if [ "$BOOL" = "true" ]; then
     exit 0

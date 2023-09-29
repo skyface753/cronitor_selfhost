@@ -11,3 +11,9 @@ debug:
 	INFLUXDB_ADMIN_TOKEN=my-token \
 	DEBUG=true \
 	go run .
+
+debug-python:
+	MAIL_DISABLED=true \
+	APIKEY=apikey123 \
+	DEV=true \
+	python3 -m server

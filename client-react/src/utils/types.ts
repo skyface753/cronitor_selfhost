@@ -8,4 +8,5 @@ export type JobResult = {
   timestamp: string;
   success: boolean;
   message: string;
+  command: string;
 };
