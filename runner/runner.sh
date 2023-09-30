@@ -48,7 +48,8 @@ COMMAND=$(echo "${COMMAND}" | tr -d '\\')
 # Remove single quotes
 COMMAND=$(echo "${COMMAND}" | tr -d "'")
 
-#sleep 5
+sleep 5
+
 echo $ERROR
 API_RUNNER_ENDPOINT=${API_ENDPOINT}jobs/${JOB_ID}
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful

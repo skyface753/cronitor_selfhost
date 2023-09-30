@@ -17,3 +17,11 @@ debug-python:
 	APIKEY=apikey123 \
 	DEV=true \
 	python3 -m server
+
+run-docker-debug:
+	docker build -t skyface753/cronitor-server ./server
+	docker run --rm -v ${PWD}/jobs.json:/jobs.json \
+	-e APIKEY=apikey123 \
+	-e MAIL_DISABLED=true \
+	--network host \
+	skyface753/cronitor-server

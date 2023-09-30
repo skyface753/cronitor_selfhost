@@ -1,5 +1,5 @@
 import server.config.config as config
-from fastapi import APIRouter, Body, HTTPException, Request, status
+from fastapi import APIRouter, Body, HTTPException, Request, status, Header
 from typing import List
 from server.models.jobs_results import JobResult, InsertJobResult, JobResultList
 from fastapi import APIRouter, Body, Request, status, HTTPException
@@ -68,6 +68,46 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
     })
     created_jobResult_item["_id"] = str(created_jobResult_item["_id"])
     if jobResult["success"] == False:
-        mail.send_email(jobResult["job_id"], jobResult["success"], jobResult["message"], jobResult["command"])
+        # mail.send_email(jobResult["job_id"], jobResult["success"], jobResult["message"], jobResult["command"])
+        mail.send_failed(jobResult["job_id"], jobResult["message"], jobResult["command"])
+    else:
+        # Set job waiting to false
+        for j in config.jobs:
+            if j["id"] == jobResult["job_id"]:
+                j["waiting"] = False
+                break
     return created_jobResult_item
 
+
+
+@jobsRouter.put("/{job_id}/waiting", response_description='set waiting state of a job', status_code=status.HTTP_200_OK)
+def set_waiting_state(request: Request, job_id: str, api_key: str = Header(...)):
+    # Check if API Key is valid
+    check_api_key(api_key)
+    # Check if Job ID is valid
+    job = check_job_id(job_id)
+    # Set the waiting state of the job
+    for j in config.jobs:
+        if j["id"] == job_id:
+            j["waiting"] = True
+            break
+    return {"message": "Job waiting state set to true"}
+    
+@jobsRouter.post("/{job_id}/grace_time_expired", response_description='grace time expired', status_code=status.HTTP_200_OK)
+def grace_time_expired(request: Request, job_id: str, api_key: str = Header(...)):
+    # Check if API Key is valid
+    check_api_key(api_key)
+    # Check if Job ID is valid
+    job = check_job_id(job_id)
+    # Check if the job is waiting
+    wasWaiting = False
+    for j in config.jobs:
+        if j["id"] == job_id:
+            wasWaiting = j["waiting"]
+            break
+    if wasWaiting:
+        if config.DEV:
+            print("Jobs was waiting and did not execute in time!")
+        mail.send_expired(job_id)
+    elif config.DEV:
+        print("Perfekt ausgeführt")

@@ -1,2 +1,5 @@
-pydantic[email]
-motor
+aiocron
+pymongo
+fastapi
+uvicorn
+requests

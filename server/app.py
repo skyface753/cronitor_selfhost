@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Query, HTTPException, Path, APIRouter
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import os
 
 
 
@@ -29,7 +28,6 @@ app.add_middleware(
 )
 
 
-
 from pymongo import MongoClient
 @app.on_event("startup")
 def startup_db_client():
@@ -49,6 +47,8 @@ def startup_db_client():
         
     app.mongodb_client = MongoClient(config.MONGODB_CONNECTION_URI)
     app.database = app.mongodb_client[config.DB_NAME]
+    # Test the connection
+    app.database.command("serverStatus")
     print("Connected to the MongoDB database!")
 
 @app.on_event("shutdown")
@@ -57,15 +57,12 @@ def shutdown_db_client():
     
 apiPrefix = "/api/v1"
 
-
-
-
-
-
 from server.routes.jobs import jobsRouter
 
-    
 app.include_router(jobsRouter, prefix="/api/v1/jobs")
 
 def run():
-    uvicorn.run("server.app:app", host="127.0.0.1", port=8000, reload=True)
+    
+    # uvicorn.run("server.app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("server.app:app", host="127.0.0.1" if config.DEV else "0.0.0.0", port=8000, reload=True)
+    
