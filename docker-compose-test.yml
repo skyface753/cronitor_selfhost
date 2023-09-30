@@ -28,8 +28,8 @@ services:
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
-    # ports:
-    #   - '27017:27017'
+    volumes:
+      - ./data:/data/db
     environment:
       TZ: Europe/Berlin
       MONGO_INITDB_ROOT_USERNAME: admin
