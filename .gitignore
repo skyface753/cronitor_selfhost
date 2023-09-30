@@ -2,3 +2,4 @@
 influxdb/
 **/__pycache__/**
 server/venv
+data/
