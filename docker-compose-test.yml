@@ -7,6 +7,7 @@ services:
     networks:
       - cronitor
     environment:
+      TZ: Europe/Berlin
       NODE_ENV: production
     volumes:
       - ./jobs.json:/jobs.json
@@ -21,6 +22,7 @@ services:
     networks:
       - cronitor
     environment:
+      TZ: Europe/Berlin
       APIKEY: ${APIKEY}
       MAIL_DISABLED: ${MAIL_DISABLED}
       MONGODB_CONNECTION_URI: ${MONGODB_CONNECTION_URI}
@@ -46,6 +48,8 @@ services:
       - cronitor
       - proxy
     restart: always
+    environment:
+      TZ: Europe/Berlin
     depends_on:
       - server
       - client

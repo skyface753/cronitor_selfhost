@@ -7,6 +7,7 @@ export type JobResult = {
   job_id: string;
   timestamp: string;
   success: boolean;
+  expired: boolean;
   message: string;
   command: string;
 };

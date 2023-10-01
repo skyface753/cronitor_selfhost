@@ -59,7 +59,7 @@ export default function Page() {
         <thead className='res-table-head'>
           <tr>
             <th>Timestamp</th>
-            <th>Success</th>
+            <th>Status</th>
             <th>Command</th>
             <th>Content</th>
           </tr>
@@ -74,7 +74,29 @@ export default function Page() {
                     timeStyle: 'medium',
                   }).format(new Date(result.timestamp))}
                 </td>
-                <td>{result.success.toString()}</td>
+                {/* <td>{result.success.toString()}</td>
+                
+                <td>{result.expired?.toString()}</td> */}
+                <td>
+                  <div className='job-status'>
+                    <span
+                      className={`dot tooltip ${
+                        result.success
+                          ? 'green'
+                          : result.expired
+                          ? 'orange'
+                          : 'red'
+                      }`}
+                    ></span>{' '}
+                    <span className='status-text'>
+                      {result.success
+                        ? 'Success'
+                        : result.expired
+                        ? 'Expired'
+                        : 'Failed'}
+                    </span>
+                  </div>
+                </td>
                 <td>{result.command}</td>
                 <td>{result.message}</td>
               </tr>

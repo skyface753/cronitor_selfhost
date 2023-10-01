@@ -122,5 +122,15 @@ def grace_time_expired(request: Request, job_id: str, api_key: str = Header(...)
         if config.DEV:
             print("Jobs was waiting and did not execute in time!")
         mail.send_expired(job_id)
+        newJobResult = {"job_id": job_id, "success": False, "expired": True}
+        newJobResult["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
+        new_jobResult_item = request.app.database[config.COLL_NAME].insert_one(newJobResult)
+        # print("new", new_jobResult_item)
+        created_jobResult_item = request.app.database[config.COLL_NAME].find_one({
+            "_id": new_jobResult_item.inserted_id
+        })
+        created_jobResult_item["_id"] = str(created_jobResult_item["_id"])
+        return {"message": "Job was waiting and did not execute in time!"}
     elif config.DEV:
         print("Perfekt ausgeführt")
+        return {"message": "Job was not waiting"}

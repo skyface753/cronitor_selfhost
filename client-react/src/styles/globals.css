@@ -93,6 +93,22 @@ body {
 .red {
   background-color: red;
 }
+.orange {
+  background-color: orange;
+}
+
+.job-status {
+  /* vertical-align: super; */
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+}
+
+.status-text {
+  margin-left: 5px;
+}
+
 /* Tooltip container */
 .tooltip {
   position: relative;

@@ -13,6 +13,7 @@ class JobResult(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
     job_id: str
     success: bool
+    expired: Optional[bool]
     message: Optional[str]
     command: Optional[str]
     timestamp: str
@@ -22,6 +23,7 @@ class JobResult(BaseModel):
 class InsertJobResult(BaseModel):
     job_id: str
     success: bool
+    expired: Optional[bool]
     message: Optional[str]
     command: Optional[str]
     

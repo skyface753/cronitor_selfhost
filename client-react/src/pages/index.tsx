@@ -61,7 +61,11 @@ export default function Home() {
                     <li key={result.timestamp}>
                       <span
                         className={`dot tooltip ${
-                          result.success ? 'green' : 'red'
+                          result.success
+                            ? 'green'
+                            : result.expired
+                            ? 'orange'
+                            : 'red'
                         }`}
                       >
                         <span className='tooltiptext'>
