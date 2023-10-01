@@ -23,6 +23,6 @@ import json
 with open('jobs.json') as json_file:
     data = json.load(json_file)
     for key in data:
-        jobs.append({"id": key, "cron": data[key]["cron"], "grace_time": data[key]["grace_time"], "waiting": False})    
+        jobs.append({"id": key, "cron": data[key]["cron"], "grace_time": data[key]["grace_time"], "waiting": False, "has_failed": False})
 if DEV:
     print(jobs)

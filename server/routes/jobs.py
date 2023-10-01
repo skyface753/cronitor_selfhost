@@ -67,13 +67,26 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
         "_id": new_jobResult_item.inserted_id
     })
     created_jobResult_item["_id"] = str(created_jobResult_item["_id"])
-    if jobResult["success"] == False:
-        # mail.send_email(jobResult["job_id"], jobResult["success"], jobResult["message"], jobResult["command"])
+    
+    if jobResult["success"] == False: # Job failed
         mail.send_failed(jobResult["job_id"], jobResult["message"], jobResult["command"])
+        print("FAILED", jobResult["job_id"])
+        # Set has failed to true
+        for j in config.jobs:
+            if j["id"] == jobResult["job_id"]:
+                j["has_failed"] = True
+                break
     else:
         # Set job waiting to false
         for j in config.jobs:
             if j["id"] == jobResult["job_id"]:
+                if j["has_failed"] == True:
+                    print("Resolved previous failure!", jobResult["job_id"])
+                    mail.send_resolved(jobResult["job_id"])
+                    j["has_failed"] = False
+                elif j["waiting"] == False:
+                    print("Job was not waiting!", jobResult["job_id"])
+                    mail.send_was_not_waiting(jobResult["job_id"])
                 j["waiting"] = False
                 break
     return created_jobResult_item

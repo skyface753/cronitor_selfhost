@@ -63,9 +63,54 @@ def send_expired(id):
     mailMessage.attach(part2)
     
     send_email(mailMessage)
-          
-        
 
+def send_was_not_waiting(id):
+    mailMessage = init_mailMessage(id, "was not waiting")
+    
+    text = """\
+    Job {} was not waiting.
+    Please check your crontab and the jobs.json file.
+    """.format(id)
+    html = """\
+    <html>
+      <body>
+        <p>Job {} was not waiting.<br>
+            Please check your crontab and the jobs.json file.<br>
+        </p>
+      </body>
+    </html>
+    """.format(id)
+    
+    part1 = MIMEText(text, "plain")
+    part2 = MIMEText(html, "html")
+    
+    mailMessage.attach(part1)
+    mailMessage.attach(part2)
+    
+    send_email(mailMessage)
+        
+def send_resolved(id):
+    mailMessage = init_mailMessage(id, "resolved")
+    
+    text = """\
+    Job {} resolved.
+    """.format(id)
+    html = """\
+    <html>
+      <body>
+        <p>Job {} resolved.<br>
+        </p>
+      </body>
+    </html>
+    """.format(id)
+    
+    part1 = MIMEText(text, "plain")
+    part2 = MIMEText(html, "html")
+    
+    mailMessage.attach(part1)
+    mailMessage.attach(part2)
+    
+    send_email(mailMessage)
 
 def send_email(mailMessage):
     if config.MAIL_DISABLED:

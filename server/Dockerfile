@@ -9,4 +9,3 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 8000
 WORKDIR /
 ENTRYPOINT [ "/entrypoint.sh" ]
-# CMD ["python", "-m", "server.app"]

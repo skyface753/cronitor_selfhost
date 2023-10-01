@@ -16,6 +16,8 @@ services:
     build:
       context: server
       dockerfile: Dockerfile
+    ports:
+      - '127.0.0.1:8000:8000'
     networks:
       - cronitor
     environment:
@@ -40,8 +42,6 @@ services:
     build:
       context: ./proxy
       dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:81:80"
     networks:
       - cronitor
       - proxy
@@ -82,4 +82,3 @@ networks:
     external: true
   cronitor:
     driver: bridge
-
