@@ -4,8 +4,8 @@ services:
     build:
       context: client-react
       dockerfile: Dockerfile
-    # ports:
-    #   - '3000:3000'
+    networks:
+      - cronitor
     environment:
       NODE_ENV: production
     volumes:
@@ -16,8 +16,8 @@ services:
     build:
       context: server
       dockerfile: Dockerfile
-    # ports:
-    #   - '8000:8000'
+    networks:
+      - cronitor
     environment:
       APIKEY: ${APIKEY}
       MAIL_DISABLED: ${MAIL_DISABLED}
@@ -41,11 +41,22 @@ services:
       context: ./proxy
       dockerfile: Dockerfile
     ports:
-      - 81:80
+      - "127.0.0.1:81:80"
+    networks:
+      - cronitor
+      - proxy
     restart: always
     depends_on:
       - server
       - client
+    labels:
+      - 'traefik.enable=true' #<== Enable traefik
+      - 'traefik.http.routers.cronitor-secured.rule=Host(`cronitor.skyface.de`)' #<== Set domain
+      - 'traefik.http.routers.cronitor-secured.entrypoints=websecure' #<== Set entry point for HTTPS
+      - 'traefik.http.routers.cronitor-secured.tls.certresolver=mytlschallenge' #<== Set certsresolvers for https
+      - 'traefik.http.routers.cronitor-secured.middlewares=authelia'
+      - 'traefik.http.routers.cronitor-secured.service=cronitor-service' #<== Set service
+      - 'traefik.http.services.cronitor-service.loadbalancer.server.port=80' #<== Set port
 
   mongodb:
     image: mongo:latest
@@ -54,6 +65,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/data/db
+    networks:
+      - cronitor
     environment:
       TZ: Europe/Berlin
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -64,15 +77,9 @@ services:
       timeout: 10s
       retries: 5
 
-  # express:
-  #   image: mongo-express:latest
-  #   ports:
-  #     - '8081:8081'
-  #   environment:
-  #     ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-  #     ME_CONFIG_MONGODB_ADMINPASSWORD: admin
-  #     ME_CONFIG_MONGODB_SERVER: mongodb
-  #     ME_CONFIG_MONGODB_PORT: 27017
-  #     ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
-  #     ME_CONFIG_BASICAUTH_USERNAME: admin
-  #     ME_CONFIG_BASICAUTH_PASSWORD: admin
+networks:
+  proxy:
+    external: true
+  cronitor:
+    driver: bridge
+

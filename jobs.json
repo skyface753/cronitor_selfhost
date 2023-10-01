@@ -1,8 +1,4 @@
 {
-  "certbot": {
-    "cron": "0 2 * * *",
-    "grace_time": "60"
-  },
   "mailcow-local": {
     "cron": "0 3 * * *",
     "grace_time": "3600"
@@ -17,10 +13,6 @@
   },
   "restic": {
     "cron": "0 0 * * *",
-    "grace_time": "360"
-  },
-  "test": {
-    "cron": "*/1 * * * *",
-    "grace_time": "15"
+    "grace_time": "600"
   }
 }
