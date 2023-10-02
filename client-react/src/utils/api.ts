@@ -4,27 +4,6 @@ import { Job, JobResult } from './types';
 
 export async function getCrons() {
   const { data } = await axios.get(API_URL + '/jobs/');
-  // [
-  //   {
-  //     "job_id": "certbot",
-  //     "results": [
-  //       {
-  //         "_id": "651579324b345af02162f021",
-  //         "job_id": "certbot",
-  //         "success": false,
-  //         "message": "Neuester Eintrag",
-  //         "timestamp": "2021-01-01T00:00:00.000Z"
-  //       },
-  //       {
-  //         "_id": "651579324b345af02162f020",
-  //         "job_id": "certbot",
-  //         "success": true,
-  //         "message": "Test Message",
-  //         "timestamp": "2021-01-01T00:00:00.000Z"
-  //       },
-  //     },
-  //     {}
-  //   ]
   const jobs: Job[] = [];
   for (let i = 0; i < Object.keys(data).length; i++) {
     const job: Job = {

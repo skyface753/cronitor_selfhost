@@ -1,6 +1,5 @@
 'use client';
 import { getDataForAJob } from '@/utils/api';
-import { API_URL } from '@/utils/constants';
 import { JobResult } from '@/utils/types';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
@@ -39,22 +38,6 @@ export default function Page() {
       >
         {router.query.id}
       </h1>
-      {/* <ul>
-        {jobResults.length > 0 &&
-          jobResults.map((result) => (
-            <li key={result.timestamp}>
-              {Intl.DateTimeFormat('de-DE', {
-                dateStyle: 'medium',
-                timeStyle: 'medium',
-              }).format(new Date(result.timestamp))}
-              <br />
-              {'Success: '}
-              {result.success.toString()}
-              <br />
-              {result.content}
-            </li>
-          ))}
-      </ul> */}
       <table className='res-table'>
         <thead className='res-table-head'>
           <tr>
@@ -74,9 +57,6 @@ export default function Page() {
                     timeStyle: 'medium',
                   }).format(new Date(result.timestamp))}
                 </td>
-                {/* <td>{result.success.toString()}</td>
-                
-                <td>{result.expired?.toString()}</td> */}
                 <td>
                   <div className='job-status'>
                     <span

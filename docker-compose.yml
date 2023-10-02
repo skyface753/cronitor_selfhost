@@ -1,54 +1,88 @@
 services:
-  server:
-    image: skyface753/skycron-server
+  client:
+    image: skyface753/cronitor-client:latest
     build:
-      context: .
+      context: client-react
       dockerfile: Dockerfile
-    ports:
-      - '8123:8123'
+    networks:
+      - cronitor
+    environment:
+      TZ: Europe/Berlin
+      NODE_ENV: production
     volumes:
       - ./jobs.json:/jobs.json
+
+  server:
+    image: skyface753/cronitor-server:latest
+    build:
+      context: server
+      dockerfile: Dockerfile
+    ports:
+      - '127.0.0.1:8000:8000'
+    networks:
+      - cronitor
     environment:
-      API_KEY: ${API_KEY}
-      SMTP_HOST: ${SMTP_HOST}
+      TZ: Europe/Berlin
+      APIKEY: ${APIKEY}
+      MAIL_DISABLED: ${MAIL_DISABLED}
+      MONGODB_CONNECTION_URI: ${MONGODB_CONNECTION_URI}
+      DB_NAME: ${DB_NAME}
+      COLL_NAME: ${COLL_NAME}
       SMTP_PORT: ${SMTP_PORT}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
       SMTP_FROM: ${SMTP_FROM}
       SMTP_TO: ${SMTP_TO}
-      INFLUXDB_ORG: ${INFLUXDB_ORG}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
-      INFLUXDB_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
-      PRODUCTION: true
-      TZ: Europe/Berlin
-      DEBUG: true
-      MAIL_DISABLED: ${MAIL_DISABLED}
-    restart: unless-stopped
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
     depends_on:
-      influxdb:
-        condition: service_healthy
+      - mongodb
+    volumes:
+      - ./jobs.json:/jobs.json
 
-  influxdb:
-    image: influxdb:latest
+  proxy:
+    image: skyface753/cronitor-proxy:latest
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    networks:
+      - cronitor
+      - proxy
+    restart: always
+    environment:
+      TZ: Europe/Berlin
+    depends_on:
+      - server
+      - client
+    labels:
+      - 'traefik.enable=true' #<== Enable traefik
+      - 'traefik.http.routers.cronitor-secured.rule=Host(`cronitor.skyface.de`)' #<== Set domain
+      - 'traefik.http.routers.cronitor-secured.entrypoints=websecure' #<== Set entry point for HTTPS
+      - 'traefik.http.routers.cronitor-secured.tls.certresolver=mytlschallenge' #<== Set certsresolvers for https
+      - 'traefik.http.routers.cronitor-secured.middlewares=authelia'
+      - 'traefik.http.routers.cronitor-secured.service=cronitor-service' #<== Set service
+      - 'traefik.http.services.cronitor-service.loadbalancer.server.port=80' #<== Set port
+
+  mongodb:
+    image: mongo:latest
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
-    ports:
-      - '127.0.0.1:8086:8086'
     volumes:
-      - ./influxdb:/var/lib/influxdb2
+      - ./data:/data/db
+    networks:
+      - cronitor
     environment:
       TZ: Europe/Berlin
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      INFLUXDB_HTTP_LOG_ENABLED: false
-      INFLUXDB_DATA_QUERY_LOG_ENABLED: false
-      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
-      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
-      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
     healthcheck:
-      test: 'curl -f http://localhost:8086/ping'
+      test: 'curl -f http://localhost:27017'
       interval: 5s
       timeout: 10s
       retries: 5
+
+networks:
+  proxy:
+    external: true
+  cronitor:
+    driver: bridge
