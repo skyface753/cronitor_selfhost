@@ -31,7 +31,7 @@ Copy and edit the `.env.example` file to `.env` and adjust the variables to your
 cp example.env .env
 ```
 
-Refer to the [Environment variables](/environment-variables) section for more information.
+Refer to the [Environment variables](environment-variables) section for more information.
 
 ## Jobs
 

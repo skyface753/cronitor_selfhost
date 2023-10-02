@@ -12,7 +12,7 @@ This Repository is a self-developed, self-hosted version of Cronitor by [Skyface
   - [x] Expired
   - [x] Resolved
 - [x] Web UI
-- [x] API (with [Docs](/environment-variables) and [Redocs](/environment-variables))
+- [x] API (with [Docs and Redocs](environment-variables))
 
 ## TODO
 

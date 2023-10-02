@@ -1,4 +1,6 @@
 site_name: Cronitor Selfhosted
+site_url: https://www.skyface.de/cronitor_selfhost/
+
 theme:
   name: material
   features:
