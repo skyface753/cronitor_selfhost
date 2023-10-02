@@ -14,5 +14,9 @@
   "restic": {
     "cron": "0 0 * * *",
     "grace_time": "600"
+  },
+  "should_expire": {
+    "cron": "0 0 * * *",
+    "grace_time": "600"
   }
 }

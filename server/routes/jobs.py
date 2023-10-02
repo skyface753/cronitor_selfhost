@@ -24,21 +24,23 @@ def check_job_id(job_id: str):
 
 
    
-def get_results_for_a_job(job_id: str, request: Request, limit: int =   0):
+def get_results_for_a_job(job_id: str, request: Request, limit: int = 0, exclude_message: bool = False):
     jobResult = request.app.database[config.COLL_NAME].find({"job_id": job_id}, sort=[('_id', -1)], limit=limit)
-    # print(jobResult)
     jobResultList = []
     for result in jobResult:
         result["_id"] = str(result["_id"])
+        if exclude_message:
+            result["message"] = ""
         jobResultList.append(result)
     return jobResultList
+
 
 @jobsRouter.get("/", response_description="list all jobs and their result", response_model=List[JobResultList])
 def list_all_jobs(request: Request):
     # Get for each job the 10 latest results
     jobResults = []
     for job in config.jobs:
-        jobResults.append({"job_id": job["id"], "results": get_results_for_a_job(job["id"], request, 10)})
+        jobResults.append({"job_id": job["id"], "results": get_results_for_a_job(job["id"], request, 10, True)})
     # print(jobResults)
     return jobResults
 

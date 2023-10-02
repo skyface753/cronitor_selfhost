@@ -50,8 +50,6 @@ export default function Home() {
                       <br />
                       {'Success: '}
                       {job.results[job.results.length - 1].success.toString()}
-                      <br />
-                      {job.results[job.results.length - 1].message}
                     </p>
                   )}
                 </a>
@@ -68,9 +66,7 @@ export default function Home() {
                             : 'red'
                         }`}
                       >
-                        <span className='tooltiptext'>
-                          {result.timestamp} - {result.message}
-                        </span>
+                        <span className='tooltiptext'>{result.timestamp}</span>
                       </span>
                     </li>
                   ))}
@@ -201,3 +197,4 @@ export default function Home() {
     </main>
   );
 }
+
