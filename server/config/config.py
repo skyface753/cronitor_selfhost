@@ -17,6 +17,13 @@ MONGODB_CONNECTION_URI = os.environ.get("MONGODB_CONNECTION_URI") or "mongodb://
 DB_NAME = os.environ.get("DB_NAME") or "jobs_db_dev"
 COLL_NAME = os.environ.get("COLL_NAME") or "job_results"
 
+SHOW_DOCS = False
+if os.environ.get("SHOW_DOCS") is not None:
+    if os.environ.get("SHOW_DOCS").lower() == "true" or os.environ.get("SHOW_DOCS") == "1":
+        SHOW_DOCS = True
+if DEV:
+    SHOW_DOCS = True
+
 # Load the jobs (id, cron, grace period) from jobs.json
 jobs = []
 import json

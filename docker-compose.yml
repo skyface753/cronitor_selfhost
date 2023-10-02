@@ -34,6 +34,7 @@ services:
       SMTP_TO: ${SMTP_TO}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SHOW_DOCS: ${SHOW_DOCS}
     depends_on:
       - mongodb
     volumes:

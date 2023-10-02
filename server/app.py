@@ -9,8 +9,8 @@ import uvicorn
 import server.config.config as config
     
     
-docs_url = "/api/docs" if config.DEV else None
-redoc_url = "/api/redocs" if config.DEV else None
+docs_url = "/api/v1/docs" if config.SHOW_DOCS else None
+redoc_url = "/api/v1/redocs" if config.SHOW_DOCS else None
 app = FastAPI(
     title="Cronitor Selfhost API",
     docs_url=docs_url,
@@ -62,7 +62,5 @@ from server.routes.jobs import jobsRouter
 app.include_router(jobsRouter, prefix="/api/v1/jobs")
 
 def run():
-    
-    # uvicorn.run("server.app:app", host="127.0.0.1", port=8000, reload=True)
     uvicorn.run("server.app:app", host="127.0.0.1" if config.DEV else "0.0.0.0", port=8000, reload=True)
     

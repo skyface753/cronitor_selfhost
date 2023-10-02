@@ -4,8 +4,8 @@ services:
     build:
       context: client-react
       dockerfile: Dockerfile
-    networks:
-      - cronitor
+    ports:
+      - '127.0.0.1:3000:3000'
     environment:
       TZ: Europe/Berlin
       NODE_ENV: production
@@ -19,8 +19,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - '127.0.0.1:8000:8000'
-    networks:
-      - cronitor
     environment:
       TZ: Europe/Berlin
       APIKEY: ${APIKEY}
@@ -34,43 +32,17 @@ services:
       SMTP_TO: ${SMTP_TO}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SHOW_DOCS: ${SHOW_DOCS}
     depends_on:
       - mongodb
     volumes:
       - ./jobs.json:/jobs.json
-
-  proxy:
-    image: skyface753/cronitor-proxy:latest
-    build:
-      context: ./proxy
-      dockerfile: Dockerfile
-    networks:
-      - cronitor
-      - proxy
-    restart: always
-    environment:
-      TZ: Europe/Berlin
-    depends_on:
-      - server
-      - client
-    labels:
-      - 'traefik.enable=true' #<== Enable traefik
-      - 'traefik.http.routers.cronitor-secured.rule=Host(`cronitor.skyface.de`)' #<== Set domain
-      - 'traefik.http.routers.cronitor-secured.entrypoints=websecure' #<== Set entry point for HTTPS
-      - 'traefik.http.routers.cronitor-secured.tls.certresolver=mytlschallenge' #<== Set certsresolvers for https
-      - 'traefik.http.routers.cronitor-secured.middlewares=authelia'
-      - 'traefik.http.routers.cronitor-secured.service=cronitor-service' #<== Set service
-      - 'traefik.http.services.cronitor-service.loadbalancer.server.port=80' #<== Set port
 
   mongodb:
     image: mongo:latest
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
-    volumes:
-      - ./data:/data/db
-    networks:
-      - cronitor
     environment:
       TZ: Europe/Berlin
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -80,9 +52,3 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
-
-networks:
-  proxy:
-    external: true
-  cronitor:
-    driver: bridge

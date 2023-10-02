@@ -1,17 +1,19 @@
-# Welcome to MkDocs
+# Cronitor Self-Hosted
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+Cronitor is a monitoring platform for cron jobs, background tasks and scheduled scripts.
 
-## Commands
+This Repository is a self-developed, self-hosted version of Cronitor by [Skyface](https://skyface.de).
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+## Features
 
-## Project layout
+- [x] Self-hosted
+- [x] Email notifications
+  - [x] Failed
+  - [x] Expired
+  - [x] Resolved
+- [x] Web UI
+- [x] API (with [Docs](/environment-variables) and [Redocs](/environment-variables))
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+## TODO
+
+- [ ] Webhooks

@@ -1,7 +1,9 @@
 site_name: Cronitor Selfhosted
 theme:
   name: material
+  features:
+    - toc.integrate
 nav:
   - Home: index.md
-  - About: about.md
   - Installation: installation.md
+  - Environment Variables: environment-variables.md
