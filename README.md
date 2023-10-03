@@ -78,9 +78,13 @@ For the above crontab example the `jobs.json` should look like this:
   - [x] Failed
   - [x] Expired
   - [x] Resolved
+- [x] Webhook notifications
+  - [x] Discord
 - [x] Web UI
 - [x] API (with [Docs and Redocs](environment-variables))
 
 ## TODO
 
-- [ ] Webhooks
+- [ ] Webhook notifications
+  - [ ] Slack
+  - [ ] Telegram

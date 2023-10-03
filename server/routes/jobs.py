@@ -80,7 +80,8 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
     created_jobResult_item["_id"] = str(created_jobResult_item["_id"])
     response = "OK"
     if jobResult["success"] == False: # Job failed
-        notify.send_failed(jobResult["job_id"], jobResult["message"], jobResult["command"])
+        # notify.send_failed(jobResult["job_id"], jobResult["message"], jobResult["command"])
+        notify.send_notification(jobResult["job_id"], "failed", jobResult["message"], jobResult["command"])
         update_job(jobResult["job_id"], True, False)
         response = "Sent failure mail"
     else:
@@ -88,10 +89,12 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
         for j in config.jobs:
             if j["id"] == jobResult["job_id"]:
                 if j["has_failed"] == True:
-                    notify.send_resolved(jobResult["job_id"])
+                    # notify.send_resolved(jobResult["job_id"])
+                    notify.send_notification(jobResult["job_id"], "resolved")
                     response = "Sent resolved mail"
                 elif j["waiting"] == False:
-                    notify.send_was_not_waiting(jobResult["job_id"])
+                    # notify.send_was_not_waiting(jobResult["job_id"])
+                    notify.send_notification(jobResult["job_id"], "was_not_waiting")
                     response = "Sent was not waiting mail"
                 update_job(jobResult["job_id"], False, False)
                 break
@@ -125,7 +128,8 @@ def grace_time_expired(request: Request, job_id: str, api_key: str = Header(...)
     if wasWaiting:
         if config.DEV:
             print("Jobs was waiting and did not execute in time!")
-        notify.send_expired(job_id)
+        # notify.send_expired(job_id)
+        notify.send_notification(job_id, "expired")
         newJobResult = {"job_id": job_id, "success": False, "expired": True}
         newJobResult["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
         new_jobResult_item = request.app.database[config.COLL_NAME].insert_one(newJobResult)
