@@ -6,7 +6,6 @@ from typing import List
 
 
 os.environ["APIKEY"] = "test"
-os.environ["MAIL_DISABLED"] = "True"
 os.environ["DEV"] = "True"
 
 from server.app import app,apiPrefix

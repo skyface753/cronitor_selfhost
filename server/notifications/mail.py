@@ -1,7 +1,6 @@
 import smtplib, ssl
 import server.config.config as config
-import os
-import server.config.mail as mail_cnf
+import server.config.notify as mail_cnf
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -12,7 +11,7 @@ def init_mailMessage(id, reason):
     mailMessage["To"] = mail_cnf.SMTP_TO
     return mailMessage
 
-def send_failed(id, message, command):
+def mail_send_failed(id, message, command):
     mailMessage = init_mailMessage(id, "failed")
     
     text = """\
@@ -39,7 +38,7 @@ def send_failed(id, message, command):
     
     send_email(mailMessage)
     
-def send_expired(id):
+def mail_send_expired(id):
     mailMessage = init_mailMessage(id, "expired")
     
     text = """\
@@ -64,7 +63,7 @@ def send_expired(id):
     
     send_email(mailMessage)
 
-def send_was_not_waiting(id):
+def mail_send_was_not_waiting(id):
     mailMessage = init_mailMessage(id, "was not waiting")
     
     text = """\
@@ -89,7 +88,7 @@ def send_was_not_waiting(id):
     
     send_email(mailMessage)
         
-def send_resolved(id):
+def mail_send_resolved(id):
     mailMessage = init_mailMessage(id, "resolved")
     
     text = """\
@@ -113,17 +112,11 @@ def send_resolved(id):
     send_email(mailMessage)
 
 def send_email(mailMessage):
-    if config.MAIL_DISABLED:
-        print("Email disabled => not sending email") if config.DEV else None
-        return
-   
-    
     # Create a secure SSL context
     context = ssl.create_default_context()
 
     with smtplib.SMTP_SSL(mail_cnf.SMTP_HOST, mail_cnf.SMTP_PORT, context=context) as server:
         server.login(mail_cnf.SMTP_USERNAME, mail_cnf.SMTP_PASSWORD)
         server.sendmail(mail_cnf.SMTP_FROM, mail_cnf.SMTP_TO, mailMessage.as_string())
-        if config.DEV:
-            print("Email sent")
+        print("Email sent") if config.DEV else None
         

@@ -32,7 +32,6 @@ app.add_middleware(
 from pymongo import MongoClient
 @app.on_event("startup")
 def startup_db_client():
-    print("STARTING2 UP")
     if config.DEV:
         # Clear the database
         client = MongoClient(config.MONGODB_CONNECTION_URI)
