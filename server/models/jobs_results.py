@@ -7,7 +7,8 @@ class Job(BaseModel):
     id: str
     cron: str
     grace_time: int
-    
+    waiting: bool
+    has_failed: bool
 
 class JobResult(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
@@ -26,6 +27,11 @@ class InsertJobResult(BaseModel):
     expired: Optional[bool] = False
     message: Optional[str] = ""
     command: Optional[str] = ""
+    
+class InsertJobResultResponse(BaseModel):
+    job: Job
+    jobResult: JobResult
+    response: str
     
     
 class JobResultList(BaseModel):

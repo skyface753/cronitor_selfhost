@@ -3,3 +3,5 @@ pymongo
 fastapi
 uvicorn
 requests
+httpx
+pytest

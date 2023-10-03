@@ -1,7 +1,7 @@
 import server.config.config as config
 from fastapi import APIRouter, Body, HTTPException, Request, status, Header
 from typing import List
-from server.models.jobs_results import JobResult, InsertJobResult, JobResultList
+from server.models.jobs_results import JobResult, InsertJobResult, JobResultList, InsertJobResultResponse
 from fastapi import APIRouter, Body, Request, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 import server.mail.mail as mail
@@ -62,7 +62,7 @@ def update_job(id, had_failed=None, waiting=None):
                 j["waiting"] = waiting
             break
 
-@jobsRouter.post("/{job_id}", response_description='insert a job result', status_code=status.HTTP_201_CREATED,response_model=JobResult)
+@jobsRouter.post("/{job_id}", response_description='insert a job result', status_code=status.HTTP_201_CREATED,response_model=InsertJobResultResponse)
 def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), api_key: str = Body(...)):
     # Check if API Key is valid
     check_api_key(api_key)
@@ -78,17 +78,12 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
         "_id": new_jobResult_item.inserted_id
     })
     created_jobResult_item["_id"] = str(created_jobResult_item["_id"])
-    
+    response = "OK"
     if jobResult["success"] == False: # Job failed
         mail.send_failed(jobResult["job_id"], jobResult["message"], jobResult["command"])
         print("FAILED", jobResult["job_id"])
-        # Set has failed to true
-        # for j in config.jobs:
-        #     if j["id"] == jobResult["job_id"]:
-        #         j["has_failed"] = True
-        #         j["waiting"] = False
-        #         break
         update_job(jobResult["job_id"], True, False)
+        response = "Sent failure mail"
     else:
         # Set job waiting to false
         for j in config.jobs:
@@ -96,14 +91,15 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
                 if j["has_failed"] == True:
                     print("Resolved previous failure!", jobResult["job_id"])
                     mail.send_resolved(jobResult["job_id"])
-                    # j["has_failed"] = False
+                    response = "Sent resolved mail"
                 elif j["waiting"] == False:
                     print("Job was not waiting!", jobResult["job_id"])
                     mail.send_was_not_waiting(jobResult["job_id"])
-                # j["waiting"] = False
+                    response = "Sent was not waiting mail"
                 update_job(jobResult["job_id"], False, False)
                 break
-    return created_jobResult_item
+    insertJobResultResponse = InsertJobResultResponse(job=job, jobResult=created_jobResult_item, response=response)
+    return insertJobResultResponse
 
 
 
@@ -114,10 +110,6 @@ def set_waiting_state(request: Request, job_id: str, api_key: str = Header(...))
     # Check if Job ID is valid
     job = check_job_id(job_id)
     # Set the waiting state of the job
-    # for j in config.jobs:
-    #     if j["id"] == job_id:
-    #         j["waiting"] = True
-    #         break
     update_job(job_id, None, True)
     return {"message": "Job waiting state set to true"}
     
