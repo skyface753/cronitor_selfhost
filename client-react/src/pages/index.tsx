@@ -59,7 +59,12 @@ export default function Home() {
                             : 'red'
                         }`}
                       >
-                        <span className='tooltiptext'>{result.timestamp}</span>
+                        <span className='tooltiptext'>
+                          {Intl.DateTimeFormat('de-DE', {
+                            dateStyle: 'medium',
+                            timeStyle: 'medium',
+                          }).format(new Date(result.timestamp))}
+                        </span>
                       </span>
                     </li>
                   ))}

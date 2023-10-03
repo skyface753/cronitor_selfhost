@@ -62,8 +62,8 @@ def update_job(id, had_failed=None, waiting=None):
                 j["waiting"] = waiting
             break
 
-@jobsRouter.post("/{job_id}", response_description='insert a job result', status_code=status.HTTP_201_CREATED,response_model=InsertJobResultResponse)
-def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), api_key: str = Body(...)):
+@jobsRouter.post("/insert", response_description='insert a job result', status_code=status.HTTP_201_CREATED,response_model=InsertJobResultResponse)
+def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), api_key: str = Header(...)):
     # Check if API Key is valid
     check_api_key(api_key)
     # Check if Job ID is valid

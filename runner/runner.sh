@@ -63,9 +63,9 @@ COMMAND=$(echo "${COMMAND}" | tr -d "'")
 sleep 5
 
 echo $ERROR
-API_RUNNER_ENDPOINT=${API_ENDPOINT}jobs/${JOB_ID}
+API_RUNNER_ENDPOINT=${API_ENDPOINT}jobs/insert
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
-curl -X POST -H "Content-Type: application/json" -d "{\"api_key\":\"${API_KEY}\",\"jobResult\":{\"job_id\":\"${JOB_ID}\",\"message\":\"${ERROR}\",\"success\":${BOOL},\"command\":\"${COMMAND}\",\"expired\":false}}" ${API_RUNNER_ENDPOINT}
+curl -X POST -H "Content-Type: application/json" -d "{\"job_id\":\"${JOB_ID}\",\"message\":\"${ERROR}\",\"success\":${BOOL},\"command\":\"${COMMAND}\"}" -H "api-key: ${API_KEY}" ${API_RUNNER_ENDPOINT}
 # If the BOOL is true, the command succeeded, so return 0, otherwise return 1
 if [ "$BOOL" = "true" ]; then
     exit 0

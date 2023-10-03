@@ -24,7 +24,7 @@ class JobResult(BaseModel):
 class InsertJobResult(BaseModel):
     job_id: str
     success: bool
-    expired: Optional[bool] = False
+    # expired: Optional[bool] = False
     message: Optional[str] = ""
     command: Optional[str] = ""
     
