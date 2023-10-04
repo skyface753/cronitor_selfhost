@@ -41,8 +41,14 @@ export default function Home() {
                         new Date(job.results[job.results.length - 1].timestamp)
                       )}
                       <br />
-                      {'Success: '}
-                      {job.results[job.results.length - 1].success.toString()}
+                      {job.results[job.results.length - 1].success
+                        ? 'Success'
+                        : job.results[job.results.length - 1].expired
+                        ? 'Expired'
+                        : 'Failed'}
+                      <br />
+                      {'Runtime: '}
+                      {job.results[job.results.length - 1].runtime} seconds
                     </p>
                   )}
                 </a>
@@ -63,7 +69,13 @@ export default function Home() {
                           {Intl.DateTimeFormat('de-DE', {
                             dateStyle: 'medium',
                             timeStyle: 'medium',
-                          }).format(new Date(result.timestamp))}
+                          }).format(new Date(result.timestamp))}{' '}
+                          <br />
+                          {result.success
+                            ? 'Success'
+                            : result.expired
+                            ? 'Expired'
+                            : 'Failed'}
                         </span>
                       </span>
                     </li>

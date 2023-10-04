@@ -43,6 +43,7 @@ export default function Page() {
           <tr>
             <th>Timestamp</th>
             <th>Status</th>
+            <th>Runtime (s)</th>
             <th>Command</th>
             <th>Content</th>
           </tr>
@@ -77,6 +78,7 @@ export default function Page() {
                     </span>
                   </div>
                 </td>
+                <td>{result.runtime}</td>
                 <td>{result.command}</td>
                 <td>{result.message}</td>
               </tr>

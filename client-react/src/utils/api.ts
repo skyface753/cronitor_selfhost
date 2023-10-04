@@ -29,6 +29,7 @@ export async function getDataForAJob(id: string): Promise<JobResult[]> {
       message: data[i].message,
       command: data[i].command,
       timestamp: data[i].timestamp,
+      runtime: data[i].runtime,
     };
     results.push(result);
   }

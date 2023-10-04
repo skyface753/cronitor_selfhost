@@ -44,6 +44,10 @@ def startup_db_client():
             client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[0]["id"], "success": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'"})
         for job in config.jobs:
             client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "Neuester Eintrag", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'"})
+        # Insert expired for last job
+        client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[-1]["id"], "success": False, "expired": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'"})
+        # Insert success for second last job
+        client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[-2]["id"], "success": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'"})
         client.close()
         
     app.mongodb_client = MongoClient(config.MONGODB_CONNECTION_URI)

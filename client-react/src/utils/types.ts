@@ -10,4 +10,5 @@ export type JobResult = {
   expired: boolean;
   message: string;
   command: string;
+  runtime: number;
 };

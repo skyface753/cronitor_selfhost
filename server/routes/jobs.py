@@ -24,12 +24,12 @@ def check_job_id(job_id: str):
 
 
    
-def get_results_for_a_job(job_id: str, request: Request, limit: int = 0, exclude_message: bool = False):
+def get_results_for_a_job(job_id: str, request: Request, limit: int = 0, exclude_messages: bool = False):
     jobResult = request.app.database[config.COLL_NAME].find({"job_id": job_id}, sort=[('_id', -1)], limit=limit)
     jobResultList = []
     for result in jobResult:
         result["_id"] = str(result["_id"])
-        if exclude_message:
+        if exclude_messages:
             result["message"] = ""
         jobResultList.append(result)
     return jobResultList

@@ -26,7 +26,7 @@ done
 # Run the command and store the output, store stdout and stderr in different variables
 
 BOOL="true"
-# if output=$(eval $C 2>&1 >/dev/null); then
+start=`date +%s`
 if output=$(eval $C 2>&1); then
     echo "Command succeeded"
     BOOL="true"
@@ -34,6 +34,9 @@ else
     echo "Command failed"
     BOOL="false"
 fi
+end=`date +%s`
+rumtime=$((end-start))
+echo "Command took $rumtime seconds"
 
 # Remove all newlines from the output
 ERROR=$(echo "${output}" | tr -d '\n')
@@ -60,12 +63,16 @@ COMMAND=$(echo "${COMMAND}" | tr -d '\\')
 # Remove single quotes
 COMMAND=$(echo "${COMMAND}" | tr -d "'")
 
-sleep 5
+# sleep 5
+# If command took less then 5 seconds, sleep for the remainder of the 5 seconds
+if [ $rumtime -lt 5 ]; then
+    sleep $((5-rumtime))
+fi
 
 echo $ERROR
 API_RUNNER_ENDPOINT=${API_ENDPOINT}jobs/insert
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
-curl -X POST -H "Content-Type: application/json" -d "{\"job_id\":\"${JOB_ID}\",\"message\":\"${ERROR}\",\"success\":${BOOL},\"command\":\"${COMMAND}\"}" -H "api-key: ${API_KEY}" ${API_RUNNER_ENDPOINT}
+curl -X POST -H "Content-Type: application/json" -d "{\"job_id\":\"${JOB_ID}\",\"message\":\"${ERROR}\",\"success\":${BOOL},\"command\":\"${COMMAND}\",\"runtime\":${rumtime}}" -H "api-key: ${API_KEY}" ${API_RUNNER_ENDPOINT}
 # If the BOOL is true, the command succeeded, so return 0, otherwise return 1
 if [ "$BOOL" = "true" ]; then
     exit 0

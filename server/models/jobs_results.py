@@ -17,6 +17,7 @@ class JobResult(BaseModel):
     expired: Optional[bool] = False
     message: Optional[str] = ""
     command: Optional[str] = ""
+    runtime: Optional[float] = 0.0
     timestamp: str
     
 
@@ -27,6 +28,7 @@ class InsertJobResult(BaseModel):
     # expired: Optional[bool] = False
     message: Optional[str] = ""
     command: Optional[str] = ""
+    runtime: Optional[float] = 0.0
     
 class InsertJobResultResponse(BaseModel):
     job: Job
