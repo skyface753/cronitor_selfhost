@@ -78,7 +78,7 @@ export default function Page() {
                     </span>
                   </div>
                 </td>
-                <td>{result.runtime}</td>
+                <td className='runtime-cell'>{result.runtime}</td>
                 <td>{result.command}</td>
                 <td>{result.message}</td>
               </tr>

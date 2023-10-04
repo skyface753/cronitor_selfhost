@@ -186,3 +186,7 @@ table {
 td {
   padding: 10px 0;
 }
+
+.runtime-cell {
+  text-align: center;
+}
