@@ -41,7 +41,7 @@ def startup_db_client():
         for job in config.jobs:
             client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "ÄLTESTER", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'"})
         for i in range(10):
-            client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[0]["id"], "success": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'"})
+            client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[0]["id"], "success": True, "message": "Test MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'"})
         for job in config.jobs:
             client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "Neuester Eintrag", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'"})
         # Insert expired for last job
