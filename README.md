@@ -46,7 +46,9 @@ cp example.env .env
 | COLL_NAME              | The MongoDB collection name                                              | false                  | job_results                                                        |
 | NOTIFY_DISCORD         | Enable Discord notifications                                             | false                  | false                                                              |
 | NOTIFY_MAIL            | Enable mail notifications                                                | false                  | false                                                              |
+| NOTIFY_SLACK           | Enable Slack notifications                                               | false                  | false                                                              |
 | DISCORD_WEBHOOK_URL    | The Discord webhook url                                                  | IF NOTIFY_DISCORD=true |                                                                    |
+| SLACK_WEBHOOK_URL      | The Slack webhook url                                                    | IF NOTIFY_SLACK=true   |                                                                    |
 | SMTP_HOST              | The SMTP host                                                            | IF NOTIFY_DISCORD=true |                                                                    |
 | SMTP_PORT              | The SMTP port                                                            | IF NOTIFY_DISCORD=true |                                                                    |
 | SMTP_USERNAME          | The SMTP username                                                        | IF NOTIFY_DISCORD=true |                                                                    |
@@ -81,11 +83,11 @@ For the above crontab example the `jobs.json` should look like this:
   - [x] Resolved
 - [x] Webhook notifications
   - [x] Discord
+  - [x] Slack
 - [x] Web UI
 - [x] API (with [Docs and Redocs](environment-variables))
 
 ## TODO
 
 - [ ] Webhook notifications
-  - [ ] Slack
   - [ ] Telegram

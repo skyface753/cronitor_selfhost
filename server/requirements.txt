@@ -6,3 +6,4 @@ requests
 httpx
 pytest
 discord-webhook
+slack_sdk
