@@ -26,9 +26,9 @@ def test_read_main(client):
     assert response.json()[2]["job_id"] == "appwrite"
     assert len(response.json()[2]["results"]) == 2
     assert response.json()[3]["job_id"] == "restic"
-    assert len(response.json()[3]["results"]) == 2
+    assert len(response.json()[3]["results"]) == 3
     assert response.json()[4]["job_id"] == "should_expire"
-    assert len(response.json()[4]["results"]) == 2
+    assert len(response.json()[4]["results"]) == 3
     
 def test_insert_result(client):
     response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "mailcow-local", "success": True, "message": "Test Message", "command": "echo 'Hallo Welt'"}, headers={"api-key": "test"})
