@@ -27,7 +27,7 @@ done
 
 API_START_ENDPOINT=${API_ENDPOINT}jobs/start?job_id=${JOB_ID}
 # job_id in query string
-curl -X POST -H "Content-Type: application/json" -H "api-key: ${API_KEY}" ${API_START_ENDPOINT}
+curl -s -X POST -H "Content-Type: application/json" -H "api-key: ${API_KEY}" ${API_START_ENDPOINT} > /dev/null
 
 BOOL="true"
 start=`date +%s`
