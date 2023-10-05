@@ -35,6 +35,11 @@ export default function Page() {
         var labels = data.map((result) =>
           result.success ? 'Success' : result.expired ? 'Expired' : 'Failed'
         );
+        // Reverse the order of the arrays
+        categories.reverse();
+        series.reverse();
+        colors.reverse();
+        labels.reverse();
 
         const newChartData: ApexOptions = {
           colors: colors,
@@ -52,27 +57,14 @@ export default function Page() {
             background: '0',
             events: {
               click(event, chartContext, config) {
-                console.log(typeof event);
-                console.log(typeof chartContext);
-                console.log(typeof config);
-
-                // console.log(config.config.series[config.seriesIndex]);
-                // console.log(config.config.series[config.seriesIndex].name);
-                // console.log(config.dataPointIndex);
-                // console.log(
-                //   config.config.series[config.seriesIndex].data[
-                //     config.dataPointIndex
-                //   ]
-                // );
-                // window.location.href = `#anchor-${config.dataPointIndex}`;
+                // Reversed index
+                var index = data.length - config.dataPointIndex - 1;
                 // Add related class to the row
                 var rows = document.querySelectorAll('.res-table-body tr');
                 rows.forEach((row) => {
                   row.classList.remove('related');
                 });
-                var row = document.getElementById(
-                  `row-${config.dataPointIndex}`
-                );
+                var row = document.getElementById(`row-${index}`);
                 row?.classList.add('related');
 
                 // Scroll to the row
@@ -108,6 +100,7 @@ export default function Page() {
               data: series,
             },
           ],
+
           labels: labels,
         };
         console.log(newChartData);
