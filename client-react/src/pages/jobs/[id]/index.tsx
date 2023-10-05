@@ -3,18 +3,115 @@ import { getDataForAJob } from '@/utils/api';
 import { JobResult } from '@/utils/types';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { ApexOptions } from 'apexcharts';
+
+const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
+
+import React, { Component } from 'react';
 
 export default function Page() {
   const router = useRouter();
   console.log(router.query.id);
   const [jobResults, setJobResults] = useState<JobResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [charData, setChartData] = useState<ApexOptions>();
 
   useEffect(() => {
     if (router.query.id) {
       getDataForAJob(router.query.id as string).then((data) => {
         setJobResults(data as JobResult[]);
         setLoading(false);
+        var categories = data.map((result) =>
+          Intl.DateTimeFormat('de-DE', {
+            dateStyle: 'medium',
+            timeStyle: 'medium',
+          }).format(new Date(result.timestamp))
+        );
+        var series = data.map((result) => result.runtime);
+        var colors = data.map((result) =>
+          result.success ? '#008000' : result.expired ? '#FFA500' : '#ff0000'
+        );
+        var labels = data.map((result) =>
+          result.success ? 'Success' : result.expired ? 'Expired' : 'Failed'
+        );
+
+        const newChartData: ApexOptions = {
+          colors: colors,
+          dataLabels: {
+            enabled: false,
+          },
+          theme: {
+            mode: 'dark',
+          },
+          chart: {
+            id: 'basic-bar',
+            toolbar: {
+              show: false,
+            },
+            background: '0',
+            events: {
+              click(event, chartContext, config) {
+                console.log(typeof event);
+                console.log(typeof chartContext);
+                console.log(typeof config);
+
+                // console.log(config.config.series[config.seriesIndex]);
+                // console.log(config.config.series[config.seriesIndex].name);
+                // console.log(config.dataPointIndex);
+                // console.log(
+                //   config.config.series[config.seriesIndex].data[
+                //     config.dataPointIndex
+                //   ]
+                // );
+                // window.location.href = `#anchor-${config.dataPointIndex}`;
+                // Add related class to the row
+                var rows = document.querySelectorAll('.res-table-body tr');
+                rows.forEach((row) => {
+                  row.classList.remove('related');
+                });
+                var row = document.getElementById(
+                  `row-${config.dataPointIndex}`
+                );
+                row?.classList.add('related');
+
+                // Scroll to the row
+                row?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center',
+                  inline: 'center',
+                });
+
+                // Remove class after 3 seconds
+                setTimeout(() => {
+                  row?.classList.remove('related');
+                }, 3000);
+              },
+            },
+          },
+          xaxis: {
+            categories: categories,
+          },
+          plotOptions: {
+            bar: {
+              distributed: true, // this line is mandatory
+              horizontal: false,
+              barHeight: '85%',
+            },
+          },
+          legend: {
+            show: false,
+          },
+          series: [
+            {
+              name: 'series-1',
+              data: series,
+            },
+          ],
+          labels: labels,
+        };
+        console.log(newChartData);
+        setChartData(newChartData);
       });
     }
   }, [router.query.id]);
@@ -50,9 +147,10 @@ export default function Page() {
         </thead>
         <tbody className='res-table-body'>
           {jobResults.length > 0 &&
-            jobResults.map((result) => (
-              <tr key={result.timestamp}>
+            jobResults.map((result, index) => (
+              <tr key={result._id} id={'row-' + index}>
                 <td>
+                  <a id={'anchor-' + index}></a>
                   {Intl.DateTimeFormat('de-DE', {
                     dateStyle: 'medium',
                     timeStyle: 'medium',
@@ -85,6 +183,16 @@ export default function Page() {
             ))}
         </tbody>
       </table>
+      <div className='mixed-chart'>
+        {(typeof window !== 'undefined' && (
+          <Chart
+            options={charData}
+            series={charData?.series}
+            type='bar'
+            width='50%'
+          />
+        )) || <div>Loading...</div>}
+      </div>
     </div>
   );
 }

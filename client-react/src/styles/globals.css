@@ -190,3 +190,7 @@ td {
 .runtime-cell {
   text-align: center;
 }
+
+.related {
+  background-color: #ccc;
+}
