@@ -25,6 +25,10 @@ for i in "$@"; do
 done
 # Run the command and store the output, store stdout and stderr in different variables
 
+API_START_ENDPOINT=${API_ENDPOINT}jobs/start?job_id=${JOB_ID}
+# job_id in query string
+curl -X POST -H "Content-Type: application/json" -H "api-key: ${API_KEY}" ${API_START_ENDPOINT}
+
 BOOL="true"
 start=`date +%s`
 if output=$(eval $C 2>&1); then

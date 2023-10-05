@@ -1,6 +1,6 @@
 'use client';
 import { getDataForAJob } from '@/utils/api';
-import { JobResult } from '@/utils/types';
+import { Job } from '@/utils/types';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -13,26 +13,26 @@ import React, { Component } from 'react';
 export default function Page() {
   const router = useRouter();
   console.log(router.query.id);
-  const [jobResults, setJobResults] = useState<JobResult[]>([]);
+  const [job, setJob] = useState<Job>();
   const [loading, setLoading] = useState(true);
   const [charData, setChartData] = useState<ApexOptions>();
 
   useEffect(() => {
     if (router.query.id) {
-      getDataForAJob(router.query.id as string).then((data) => {
-        setJobResults(data as JobResult[]);
+      getDataForAJob(router.query.id as string).then((data: Job) => {
+        setJob(data);
         setLoading(false);
-        var categories = data.map((result) =>
+        var categories = data.results.map((result) =>
           Intl.DateTimeFormat('de-DE', {
             dateStyle: 'medium',
             timeStyle: 'medium',
           }).format(new Date(result.timestamp))
         );
-        var series = data.map((result) => result.runtime);
-        var colors = data.map((result) =>
+        var series = data.results.map((result) => result.runtime);
+        var colors = data.results.map((result) =>
           result.success ? '#008000' : result.expired ? '#FFA500' : '#ff0000'
         );
-        var labels = data.map((result) =>
+        var labels = data.results.map((result) =>
           result.success ? 'Success' : result.expired ? 'Expired' : 'Failed'
         );
         // Reverse the order of the arrays
@@ -58,7 +58,7 @@ export default function Page() {
             events: {
               click(event, chartContext, config) {
                 // Reversed index
-                var index = data.length - config.dataPointIndex - 1;
+                var index = data.results.length - config.dataPointIndex - 1;
                 // Add related class to the row
                 var rows = document.querySelectorAll('.res-table-body tr');
                 rows.forEach((row) => {
@@ -128,6 +128,22 @@ export default function Page() {
       >
         {router.query.id}
       </h1>
+      {job?.running && (
+        <h2
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <div className='lds-ring zoom-small'>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          Running
+        </h2>
+      )}
       <table className='res-table'>
         <thead className='res-table-head'>
           <tr>
@@ -139,8 +155,9 @@ export default function Page() {
           </tr>
         </thead>
         <tbody className='res-table-body'>
-          {jobResults.length > 0 &&
-            jobResults.map((result, index) => (
+          {job &&
+            job.results &&
+            job.results.map((result, index) => (
               <tr key={result._id} id={'row-' + index}>
                 <td>
                   <a id={'anchor-' + index}></a>

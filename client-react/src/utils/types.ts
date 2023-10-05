@@ -1,5 +1,6 @@
 export type Job = {
   job_id: string;
+  running: boolean;
   results: JobResult[];
 };
 export type JobResult = {

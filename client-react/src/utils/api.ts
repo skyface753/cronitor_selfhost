@@ -9,6 +9,7 @@ export async function getCrons() {
     const job: Job = {
       job_id: data[i].job_id,
       results: data[i].results.reverse(),
+      running: data[i].running,
     };
 
     jobs.push(job);
@@ -17,9 +18,13 @@ export async function getCrons() {
   return jobs;
 }
 
-export async function getDataForAJob(id: string): Promise<JobResult[]> {
-  const { data } = await axios.get(API_URL + '/jobs/' + id);
+export async function getDataForAJob(id: string): Promise<Job> {
+  let { data } = await axios.get(API_URL + '/jobs/' + id);
   const results: JobResult[] = [];
+  const jobData = data['job'];
+  const job_id = jobData.job_id;
+  const running = jobData.running;
+  data = data['jobResults'];
   for (let i = 0; i < Object.keys(data).length; i++) {
     const result: JobResult = {
       _id: data[i]._id,
@@ -33,5 +38,10 @@ export async function getDataForAJob(id: string): Promise<JobResult[]> {
     };
     results.push(result);
   }
-  return results;
+  const job: Job = {
+    job_id,
+    running,
+    results,
+  };
+  return job;
 }

@@ -31,7 +31,17 @@ export default function Home() {
             <div className='column' key={job.job_id}>
               <div className='card'>
                 <a href={`/jobs/${job.job_id}`}>
-                  <h1>{job.job_id}</h1>
+                  <div className='card-header'>
+                    {job.running && (
+                      <div className='lds-ring zoom-small'>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                      </div>
+                    )}
+                    <h1>{job.job_id}</h1>
+                  </div>
                   {job.results.length > 0 && (
                     <p>
                       {Intl.DateTimeFormat('de-DE', {
@@ -55,7 +65,7 @@ export default function Home() {
 
                 <ul className='hlist'>
                   {job.results.map((result) => (
-                    <li key={result.timestamp}>
+                    <li key={result._id}>
                       <span
                         className={`dot tooltip ${
                           result.success

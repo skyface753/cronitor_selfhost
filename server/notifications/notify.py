@@ -14,7 +14,7 @@ def send_notification(id, type= None, message=None, command=None):
     if NOTIFY_DISCORD is None and NOTIFY_MAIL is None:
         print("No notify provider enabled!") 
         return
-    if NOTIFY_MAIL is not None:
+    if NOTIFY_MAIL is not False:
         if type == "expired":
             mail_send_expired(id)
         elif type == "failed":
@@ -23,7 +23,7 @@ def send_notification(id, type= None, message=None, command=None):
             mail_send_was_not_waiting(id)
         elif type == "resolved":
             mail_send_resolved(id)
-    if NOTIFY_DISCORD is not None:
+    if NOTIFY_DISCORD is not False:
         if type == "expired":
             discord_send_expired(id)
         elif type == "failed":
@@ -32,7 +32,7 @@ def send_notification(id, type= None, message=None, command=None):
             discord_send_was_not_waiting(id)
         elif type == "resolved":
             discord_send_resolved(id)
-    if NOTIFY_SLACK is not None:
+    if NOTIFY_SLACK is not False:
         if type == "expired":
             slack_send_expired(id)
         elif type == "failed":

@@ -1,7 +1,7 @@
 import server.config.config as config
 from fastapi import APIRouter, Body, HTTPException, Request, status, Header
 from typing import List
-from server.models.jobs_results import JobResult, InsertJobResult, JobResultList, InsertJobResultResponse
+from server.models.jobs_results import JobResult, InsertJobResult, JobResultList, InsertJobResultResponse, JobResultResponse
 from fastapi import APIRouter, Body, Request, status, HTTPException
 from fastapi.encoders import jsonable_encoder
 import server.notifications.notify as notify
@@ -40,26 +40,29 @@ def list_all_jobs(request: Request):
     # Get for each job the 10 latest results
     jobResults = []
     for job in config.jobs:
-        jobResults.append({"job_id": job["id"], "results": get_results_for_a_job(job["id"], request, 10, True)})
+        jobResults.append({"job_id": job["id"], "running": job["running"], "results": get_results_for_a_job(job["id"], request, 10, True)})
     # print(jobResults)
     return jobResults
 
 
 
-@jobsRouter.get("/{job_id}", response_description="get a job result", response_model=List[JobResult])
+@jobsRouter.get("/{job_id}", response_description="get a job result", response_model=JobResultResponse)
 def list_job(job_id: str, request: Request):
     job = check_job_id(job_id)
-    return get_results_for_a_job(job_id, request)
+    return JobResultResponse(job=job, jobResults=get_results_for_a_job(job_id, request), response="OK")
+    
 
 import datetime
 
-def update_job(id, had_failed=None, waiting=None):
+def update_job(id, had_failed=None, waiting=None, running=None):
     for j in config.jobs:
         if j["id"] == id:
             if had_failed is not None:
                 j["has_failed"] = had_failed
             if waiting is not None:
                 j["waiting"] = waiting
+            if running is not None:
+                j["running"] = running
             break
 
 @jobsRouter.post("/insert", response_description='insert a job result', status_code=status.HTTP_201_CREATED,response_model=InsertJobResultResponse)
@@ -82,7 +85,7 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
     if jobResult["success"] == False: # Job failed
         # notify.send_failed(jobResult["job_id"], jobResult["message"], jobResult["command"])
         notify.send_notification(jobResult["job_id"], "failed", jobResult["message"], jobResult["command"])
-        update_job(jobResult["job_id"], True, False)
+        update_job(jobResult["job_id"], True, False, False)
         response = "Sent failure mail"
     else:
         # Set job waiting to false
@@ -96,12 +99,20 @@ def insert_job_result(request: Request, jobResult: InsertJobResult = Body(...), 
                     # notify.send_was_not_waiting(jobResult["job_id"])
                     notify.send_notification(jobResult["job_id"], "was_not_waiting")
                     response = "Sent was not waiting mail"
-                update_job(jobResult["job_id"], False, False)
+                update_job(jobResult["job_id"], False, False, False)
                 break
     insertJobResultResponse = InsertJobResultResponse(job=job, jobResult=created_jobResult_item, response=response)
     return insertJobResultResponse
 
-
+@jobsRouter.post("/start", response_description='set running state of a job', status_code=status.HTTP_200_OK)
+def set_running_state(request: Request, job_id: str, api_key: str = Header(...)):
+    # Check if API Key is valid
+    check_api_key(api_key)
+    # Check if Job ID is valid
+    job = check_job_id(job_id)
+    # Set the running state of the job
+    update_job(job_id, None, None, True)
+    return {"message": "Job running state set to true"}
 
 @jobsRouter.put("/{job_id}/waiting", response_description='set waiting state of a job', status_code=status.HTTP_200_OK)
 def set_waiting_state(request: Request, job_id: str, api_key: str = Header(...)):
@@ -110,7 +121,7 @@ def set_waiting_state(request: Request, job_id: str, api_key: str = Header(...))
     # Check if Job ID is valid
     job = check_job_id(job_id)
     # Set the waiting state of the job
-    update_job(job_id, None, True)
+    update_job(job_id, None, True, None)
     return {"message": "Job waiting state set to true"}
     
 @jobsRouter.post("/{job_id}/grace_time_expired", response_description='grace time expired', status_code=status.HTTP_200_OK)

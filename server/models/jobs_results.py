@@ -9,6 +9,7 @@ class Job(BaseModel):
     grace_time: int
     waiting: bool
     has_failed: bool
+    running: bool
 
 class JobResult(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
@@ -20,7 +21,10 @@ class JobResult(BaseModel):
     runtime: Optional[float] = 0.0
     timestamp: str
     
-
+class JobResultResponse(BaseModel):
+    job: Job
+    jobResults: List[JobResult]
+    response: str
     
 class InsertJobResult(BaseModel):
     job_id: str
@@ -38,4 +42,5 @@ class InsertJobResultResponse(BaseModel):
     
 class JobResultList(BaseModel):
     job_id: str
+    running: bool
     results: List[JobResult]
