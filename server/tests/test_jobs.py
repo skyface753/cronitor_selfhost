@@ -45,7 +45,7 @@ def test_insert_result(client):
     assert createdJobResult["command"] == "echo 'Hallo Welt'"
     assert createdJobResult["timestamp"] != ""
     assert createdJobResult["_id"] != ""
-    assert response.json()["response"] == "Sent was not waiting mail"
+    assert response.json()["response"] == "Job was not waiting -> Notify"
     
 def test_expire(client):
     # Set waiting
@@ -59,7 +59,7 @@ def test_failed(client):
     response = client.put(apiPrefix + "/jobs/mailcow-local/waiting", headers={"api-key": "test"})
     assert response.json()["message"] == "Job waiting state set to true"
     response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "mailcow-local", "success": False, "message": "Test Message", "command": "echo 'Hallo Welt'"}, headers={"api-key": "test"})
-    assert response.json()["response"] == "Sent failure mail"
+    assert response.json()["response"] == "Job failed -> Notify"
     response = client.post(apiPrefix + "/jobs/mailcow-local/grace_time_expired", headers={"api-key": "test"})
     assert response.json()["message"] == "Job was not waiting"
     
@@ -68,12 +68,12 @@ def test_success(client):
     response = client.put(apiPrefix + "/jobs/mailcow-local/waiting", headers={"api-key": "test"})
     assert response.json()["message"] == "Job waiting state set to true"
     response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "mailcow-local", "success": True, "expired": False, "message": "Test Message", "command": "echo 'Hallo Welt'"}, headers={"api-key": "test"})
-    assert response.json()["response"] == "Sent resolved mail"
+    assert response.json()["response"] == "Job resolved -> Notify"
     response = client.post(apiPrefix + "/jobs/mailcow-local/grace_time_expired", headers={"api-key": "test"})
     assert response.json()["message"] == "Job was not waiting"
     # AGAIN (should not send resolved mail again)
     response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "mailcow-local", "success": True,  "message": "Test Message", "command": "echo 'Hallo Welt'"}, headers={"api-key": "test"})
-    assert response.json()["response"] == "Sent was not waiting mail"
+    assert response.json()["response"] == "Job was not waiting -> Notify"
     response = client.post(apiPrefix + "/jobs/mailcow-local/grace_time_expired", headers={"api-key": "test"})
     assert response.json()["message"] == "Job was not waiting"
     # AGAIN (Set waiting -> success -> grace_time_expired)

@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
 
-
+from server.jobs import Jobs as JobsClass
+newJobs = JobsClass()
 
 
 
@@ -38,16 +39,16 @@ def startup_db_client():
 
         client.drop_database(config.DB_NAME)
         # Insert some test data
-        for job in config.jobs:
+        for job in newJobs.jobs:
             client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "ÄLTESTER", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'", "runtime": 2.0})
         for i in range(10):
-            client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[0]["id"], "success": True, "message": "Test MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 3.0})
-        for job in config.jobs:
+            client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": newJobs.jobs[0]["id"], "success": True, "message": "Test MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 3.0})
+        for job in newJobs.jobs:
             client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "Neuester Eintrag", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'", "runtime": 6.0})
         # Insert expired for last job
-        client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[-1]["id"], "success": False, "expired": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 4.0})
+        client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": newJobs.jobs[-1]["id"], "success": False, "expired": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 4.0})
         # Insert success for second last job
-        client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": config.jobs[-2]["id"], "success": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 5.0})
+        client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": newJobs.jobs[-2]["id"], "success": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 5.0})
         client.close()
         
     app.mongodb_client = MongoClient(config.MONGODB_CONNECTION_URI)
