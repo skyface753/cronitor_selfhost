@@ -1,0 +1,52 @@
+// database
+datasource db {
+  provider = "sqlite"
+  url      = "file:database.db"
+}
+
+// generator
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+// data models
+// model Post {
+//   id        Int     @id @default(autoincrement())
+//   title     String
+//   content   String?
+//   views     Int     @default(0)
+//   published Boolean @default(false)
+//   author    User?   @relation(fields: [author_id], references: [id])
+//   author_id Int?
+// }
+
+// model User {
+//   id    Int     @id @default(autoincrement())
+//   email String  @unique
+//   name  String?
+//   posts Post[]
+// }
+
+model Job{
+  id String @unique @id
+  cron String
+  grace_time Int
+  is_waiting Boolean
+  is_running Boolean
+  has_failed Boolean
+  runsResults JobRun[]
+}
+
+model JobRun{
+  id Int @id @default(autoincrement())  
+  job Job @relation(fields: [job_id], references: [id])
+  job_id String
+  started_at DateTime
+  finished_at DateTime
+  is_success Boolean
+  error String? // expired, failed
+  command String
+  output String?
+  runtime Int
+}

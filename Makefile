@@ -8,3 +8,7 @@ run-cronrunner:
 	APIKEY=apikey123 \
 	DEV=true \
 	python3 -m server.cronrunner
+
+prisma:
+	prisma generate --schema ./server/prisma/schema.prisma
+	prisma db push --schema ./server/prisma/schema.prisma
