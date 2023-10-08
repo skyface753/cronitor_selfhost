@@ -1,9 +1,9 @@
 import asyncio
 from datetime import datetime
 import aiocron
-from server.config.config import jobs, APIKEY
-# Set the environment variable to run in DEV mode
-import os
+from server.config.config import APIKEY
+from server.jobs import Jobs as JobsClass
+jobs2 = JobsClass()
 import requests
 APIURL = "http://localhost:8000/api/v1"
 
@@ -19,7 +19,7 @@ async def foo(job_id, grace_time):
 
 
 async def main():
-    for job in jobs:
+    for job in jobs2.jobs:
         print(job["cron"], job["grace_time"], job["id"])
         # await foo(job["id"],job["grace_time"])
         aiocron.crontab(job["cron"], func=foo, args=(job["id"],job["grace_time"],), start=True)
