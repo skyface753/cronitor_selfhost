@@ -44,7 +44,7 @@ export default function Page() {
             : 'Failed'
         );
         // Reverse the order of the arrays
-        categories.reverse();
+        // categories.reverse();
         series.reverse();
         colors.reverse();
         labels.reverse();
@@ -89,26 +89,41 @@ export default function Page() {
               },
             },
           },
-          xaxis: {
-            categories: categories,
-          },
+
           plotOptions: {
             bar: {
               distributed: true, // this line is mandatory
               horizontal: false,
               barHeight: '85%',
+              dataLabels: {
+                position: 'bottom',
+              },
             },
           },
           legend: {
             show: false,
           },
+          responsive: [
+            {
+              breakpoint: 480,
+              options: {
+                plotOptions: {
+                  bar: {
+                    horizontal: true,
+                  },
+                },
+                legend: {
+                  position: 'bottom',
+                },
+              },
+            },
+          ],
           series: [
             {
-              name: 'series-1',
+              name: 'Runtime',
               data: series,
             },
           ],
-
           labels: labels,
         };
         console.log(newChartData);
@@ -210,12 +225,7 @@ export default function Page() {
       </table>
       <div className='mixed-chart'>
         {(typeof window !== 'undefined' && (
-          <Chart
-            options={charData}
-            series={charData?.series}
-            type='bar'
-            width='50%'
-          />
+          <Chart options={charData} series={charData?.series} type='bar' />
         )) || <div>Loading...</div>}
       </div>
     </div>
