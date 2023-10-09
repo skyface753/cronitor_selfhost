@@ -36,7 +36,8 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SHOW_DOCS: ${SHOW_DOCS}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./jobs.json:/jobs.json
 
@@ -67,12 +68,19 @@ services:
     container_name: pg_container
     image: postgres
     restart: always
+    networks:
+      - cronitor
     environment:
       POSTGRES_USER: job_user
       POSTGRES_PASSWORD: job_password
       POSTGRES_DB: job_db # postgres_url: postgresql://job_user:job_password@db:5432/job_db
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-d', 'job_db', '-U', 'job_user']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   proxy:
