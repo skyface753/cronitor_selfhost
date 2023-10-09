@@ -21,13 +21,27 @@ def check_api_key(api_key: str):
 
 
 @jobsRouter.get("/", response_description="list all jobs and their result", response_model=List[Job])
-async def list_all_jobs():
+async def list_all_jobs(show_disabled: bool = False):
     # Get for each job the 10 latest results
-    jobResults = await jobs.get_all_jobs()
+    jobResults = await jobs.get_all_jobs(show_disabled)
     # print(jobResults)
     return jobResults
 
-
+@jobsRouter.delete("/{job_id}", response_description="delete a disabled job", status_code=status.HTTP_200_OK)
+async def delete_disabled_job(job_id: str, api_key: str = Header(...)):
+    # Check if API Key is valid
+    check_api_key(api_key)
+    # Check if Job ID is valid
+    await jobs.verify_by_id(job_id, include_disabled=True)
+    # Check if Job is disabled
+    job = await Job.prisma().find_first(where={"id": job_id, "enabled": False})
+    if not job:
+        raise HTTPException(status_code=400, detail="Job is not disabled! Please remove the job from the jobs.json file and restart the server!")
+    # Delete the runs
+    await JobRun.prisma().delete_many(where={"job_id": job_id})
+    # Delete the job
+    await Job.prisma().delete(where={"id": job_id})
+    return {"message": "Job deleted"}
 
 @jobsRouter.get("/{job_id}", response_description="get a job result", response_model=JobResultResponse)
 async def list_job(job_id: str):

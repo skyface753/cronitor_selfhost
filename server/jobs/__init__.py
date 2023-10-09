@@ -28,7 +28,9 @@ class Jobs:
                     grace_time = int(job["grace_time"])
                     await Job.prisma().update(where={"id": job["id"]}, data={"cron": job["cron"], "grace_time": grace_time})
                 await Job.prisma().update(where={"id": job["id"]}, data={"enabled": True})
-                
+    
+    
+           
     async def update_job(self, id, had_failed=None, waiting=None, running=None):
         # Update the job in the database
         update = {}
@@ -41,38 +43,55 @@ class Jobs:
         await Job.prisma().update(where={"id": id}, data=update)
        
             
-    async def verify_by_id(self, job_id):
+    async def verify_by_id(self, job_id, include_disabled=False):
         # Check if Job ID is valid
         job = await Job.prisma().find_first(where={"id": job_id}, include={"runsResults": False})
-        if not job or job.enabled == False:
+        if not job:
             raise HTTPException(status_code=400, detail="Invalid Job ID")
+        if not job.enabled and not include_disabled:
+            raise HTTPException(status_code=400, detail="Job is disabled")
         return True
 
-    async def get_all_jobs(self):
+    async def get_all_jobs(self, show_disabled=False):
+        where_enabled = {"enabled": not show_disabled}
         # Get all jobs from the database
-        allJobs = await Job.prisma().find_many(where={"enabled": True}, order={"id": "asc"})
+        allJobs = await Job.prisma().find_many( where=where_enabled, order={"id": "asc"})
         # 10 latest results for each job
         for job in allJobs:
             job.runsResults = await JobRun.prisma().find_many(where={"job_id": job.id}, order={"id": "desc"}, take=10)
         return allJobs
     
-
     async def create_dummy_data(self):
-        # Delete all JobRuns
+        await self.clear_db()
+        await self.create_dummy_jobs()
+        await self.create_dummy_runs()
+        
+    async def clear_db(self):
         await JobRun.prisma().delete_many()
+        await Job.prisma().delete_many()
+        
+        
+        
+    async def create_dummy_jobs(self):
+        should_success_job = JobCreateInput(id="should_success", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
+        should_expired_job = JobCreateInput(id="should_expired", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
+        should_fail_job = JobCreateInput(id="should_fail", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
+        should_be_disabled_job = JobCreateInput(id="should_be_disabled", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=False)
+        await Job.prisma().create(should_success_job)
+        await Job.prisma().create(should_expired_job)
+        await Job.prisma().create(should_fail_job)
+        await Job.prisma().create(should_be_disabled_job)
+    
+    async def create_dummy_runs(self):
         # Create dummy data
-        allJobs = await Job.prisma().find_many(order={"id": "asc"})
-        for job in allJobs:
-            await JobRun.prisma().create(JobRunCreateInput(job_id=job.id, started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", is_success=False, error="failed", command="notARealCommand 'Hallo Welt'", output="ÄLTESTER", runtime=2.0))
-        for i in range(10):
-            await JobRun.prisma().create(JobRunCreateInput(job_id=allJobs[0].id, started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", is_success=True, error=None, command="echo 'Hallo Welt'", output="Test Message", runtime=3.0))
-        for job in allJobs:
-            await JobRun.prisma().create(JobRunCreateInput(job_id=job.id, started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", is_success=False, error="failed", command="notARealCommand 'Hallo Welt'", output="Neuester Eintrag", runtime=6.0))
-        # Insert expired for last job
-        await JobRun.prisma().create(JobRunCreateInput(job_id=allJobs[-1].id, started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", is_success=False, error="expired", command="notARealCommand 'Hallo Welt'", output="Test Message", runtime=4.0))
-        # Insert success for second last job
-        await JobRun.prisma().create(JobRunCreateInput(job_id=allJobs[-2].id, started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", is_success=True, error=None, command="echo 'Hallo Welt'", output="Test Message", runtime=5.0))
-        print("Created dummy data") if DEV else None
-        # Set all jobs to not waiting, not running and not failed
-        for job in allJobs:
-            await self.update_job(job.id, waiting=False, running=False, had_failed=False)
+        should_success_run1 = JobRunCreateInput(job_id="should_success", is_success=True, error="", output="Ältester Eintrag", command="echo 'Ältester Eintrag'", started_at="1999-01-01T00:00:00.000Z", finished_at="1999-01-01T00:00:00.000Z", runtime=2.0)
+        should_success_run2 = JobRunCreateInput(job_id="should_success", is_success=True, error="", output="Neuester Eintrag", command="echo 'Neuester Eintrag'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
+        should_expired_run = JobRunCreateInput(job_id="should_expired", is_success=False, error="expired", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
+        should_fail_run = JobRunCreateInput(job_id="should_fail", is_success=False, error="failed", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
+        should_be_disabled_run = JobRunCreateInput(job_id="should_be_disabled", is_success=False, error="failed", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
+        await JobRun.prisma().create(should_success_run1)
+        await JobRun.prisma().create(should_success_run2)
+        await JobRun.prisma().create(should_expired_run)
+        await JobRun.prisma().create(should_fail_run)
+        await JobRun.prisma().create(should_be_disabled_run)
+        

@@ -89,3 +89,46 @@ For the above crontab example the `jobs.json` should look like this:
   - [] Usage for multi instances
 
 ## TODO
+
+## Delete Jobs
+
+The jobs are stored in the database.
+So it is not enough to delete the job from the `jobs.json`.
+
+Steps:
+
+- Delete the job from the `jobs.json`
+- Run the `runner/delete_job.sh` script
+
+```bash
+./runner/delete_job.sh # You will receive a list of all jobs and can select the job you want to delete.
+```
+
+### Delete a job - Example
+
+Remove the job `testjob` from the `jobs.json`.
+
+```bash
+nano jobs.json
+# Remove the job "testjob"
+```
+
+Now you can delete the job from the database.
+
+```bash
+./runner/delete_job.sh
+```
+
+Enter the job id you want to delete and press enter.
+
+Example output:
+
+```bash
+cronitor_selfhost git:(main) ✗ ./runner/delete_job.sh
+Disabled jobs:
+
+testjob
+
+Enter job id to delete: testjob
+{"message":"Job deleted"}
+```

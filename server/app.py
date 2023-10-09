@@ -34,37 +34,14 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_db_client():
-    
-    # if config.DEV:
-        # Clear the database
-        # client = MongoClient(config.MONGODB_CONNECTION_URI)
-        # print(config.MONGODB_CONNECTION_URI)
-        # client.drop_database(config.DB_NAME)
-        # TODO: JOBS!
-        # Insert some test data
-        # for job in newJobs.internalJobs:
-        #     client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "ÄLTESTER", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'", "runtime": 2.0})
-        # for i in range(10):
-        #     client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": newJobs.internalJobs[0]["id"], "success": True, "message": "Test MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest MessageTest Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 3.0})
-        # for job in newJobs.internalJobs:
-        #     client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": job["id"], "success": False, "message": "Neuester Eintrag", "timestamp": "2021-01-01T00:00:00.000Z", "command": "notARealCommand 'Hallo Welt'", "runtime": 6.0})
-        # Insert expired for last job
-        # client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": newJobs.internalJobs[-1]["id"], "success": False, "expired": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 4.0})
-        # Insert success for second last job
-        # client[config.DB_NAME][config.COLL_NAME].insert_one({"job_id": newJobs.internalJobs[-2]["id"], "success": True, "message": "Test Message", "timestamp": "2021-01-01T00:00:00.000Z", "command": "echo 'Hallo Welt'", "runtime": 5.0})
-        # client.close()
-    # app.mongodb_client = MongoClient(config.MONGODB_CONNECTION_URI)
-    # app.database = app.mongodb_client[config.DB_NAME]
-    # # Test the connection
-    # app.database.command("serverStatus")
-    # print("Connected to the MongoDB database!")
     await prisma.connect()
     print("Connected to the Prisma database!")
-    await newJobs.load_jobs_from_file_to_db()
     if config.DEV:
         print("Loaded jobs from file to DB")
         print("Creating dummy data")
         await newJobs.create_dummy_data()
+    else:
+        await newJobs.load_jobs_from_file_to_db() 
         
 
 @app.on_event("shutdown")
