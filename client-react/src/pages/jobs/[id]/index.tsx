@@ -22,18 +22,26 @@ export default function Page() {
       getDataForAJob(router.query.id as string).then((data: Job) => {
         setJob(data);
         setLoading(false);
-        var categories = data.results.map((result) =>
+        var categories = data.runsResults.map((result) =>
           Intl.DateTimeFormat('de-DE', {
             dateStyle: 'medium',
             timeStyle: 'medium',
-          }).format(new Date(result.timestamp))
+          }).format(new Date(result.started_at))
         );
-        var series = data.results.map((result) => result.runtime);
-        var colors = data.results.map((result) =>
-          result.success ? '#008000' : result.expired ? '#FFA500' : '#ff0000'
+        var series = data.runsResults.map((result) => result.runtime);
+        var colors = data.runsResults.map((result) =>
+          result.is_success
+            ? '#008000'
+            : result.error === 'expired'
+            ? '#FFA500'
+            : '#ff0000'
         );
-        var labels = data.results.map((result) =>
-          result.success ? 'Success' : result.expired ? 'Expired' : 'Failed'
+        var labels = data.runsResults.map((result) =>
+          result.is_success
+            ? 'Success'
+            : result.error === 'expired'
+            ? 'Expired'
+            : 'Failed'
         );
         // Reverse the order of the arrays
         categories.reverse();
@@ -58,7 +66,7 @@ export default function Page() {
             events: {
               click(event, chartContext, config) {
                 // Reversed index
-                var index = data.results.length - config.dataPointIndex - 1;
+                var index = data.runsResults.length - config.dataPointIndex - 1;
                 // Add related class to the row
                 var rows = document.querySelectorAll('.res-table-body tr');
                 rows.forEach((row) => {
@@ -128,7 +136,7 @@ export default function Page() {
       >
         {router.query.id}
       </h1>
-      {job?.running && (
+      {job?.is_running && (
         <h2
           style={{
             display: 'flex',
@@ -147,7 +155,8 @@ export default function Page() {
       <table className='res-table'>
         <thead className='res-table-head'>
           <tr>
-            <th>Timestamp</th>
+            <th>Started at</th>
+            <th>Finsihed at</th>
             <th>Status</th>
             <th>Runtime (s)</th>
             <th>Command</th>
@@ -156,31 +165,37 @@ export default function Page() {
         </thead>
         <tbody className='res-table-body'>
           {job &&
-            job.results &&
-            job.results.map((result, index) => (
-              <tr key={result._id} id={'row-' + index}>
+            job.runsResults &&
+            job.runsResults.map((result, index) => (
+              <tr key={result.id} id={'row-' + index}>
                 <td>
                   <a id={'anchor-' + index}></a>
                   {Intl.DateTimeFormat('de-DE', {
                     dateStyle: 'medium',
                     timeStyle: 'medium',
-                  }).format(new Date(result.timestamp))}
+                  }).format(new Date(result.started_at))}
+                </td>
+                <td>
+                  {Intl.DateTimeFormat('de-DE', {
+                    dateStyle: 'medium',
+                    timeStyle: 'medium',
+                  }).format(new Date(result.finished_at))}
                 </td>
                 <td>
                   <div className='job-status'>
                     <span
                       className={`dot tooltip ${
-                        result.success
+                        result.is_success
                           ? 'green'
-                          : result.expired
+                          : result.error === 'expired'
                           ? 'orange'
                           : 'red'
                       }`}
                     ></span>{' '}
                     <span className='status-text'>
-                      {result.success
+                      {result.is_success
                         ? 'Success'
-                        : result.expired
+                        : result.error === 'expired'
                         ? 'Expired'
                         : 'Failed'}
                     </span>
@@ -188,7 +203,7 @@ export default function Page() {
                 </td>
                 <td className='runtime-cell'>{result.runtime}</td>
                 <td>{result.command}</td>
-                <td>{result.message}</td>
+                <td>{result.output}</td>
               </tr>
             ))}
         </tbody>

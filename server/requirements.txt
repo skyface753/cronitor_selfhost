@@ -1,5 +1,5 @@
 aiocron
-pymongo
+# pymongo
 fastapi
 uvicorn
 requests
@@ -7,3 +7,4 @@ httpx
 pytest
 discord-webhook
 slack_sdk
+prisma

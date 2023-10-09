@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 ARG NODE_VERSION=16.20.1
 FROM node:${NODE_VERSION}-alpine as base
+
+ARG NEXT_PUBLIC_DEV
+ENV NEXT_PUBLIC_DEV=${NEXT_PUBLIC_DEV}
 WORKDIR /usr/src/app
 FROM base as deps
 RUN --mount=type=bind,source=package.json,target=package.json \

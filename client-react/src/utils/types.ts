@@ -1,15 +1,21 @@
 export type Job = {
-  job_id: string;
-  running: boolean;
-  results: JobResult[];
+  id: string;
+  cron: string;
+  grace_time: number;
+  is_waiting: boolean;
+  is_running: boolean;
+  has_failed: boolean;
+  runsResults: JobResult[];
 };
 export type JobResult = {
-  _id: string;
+  id: number;
+  job: null;
   job_id: string;
-  timestamp: string;
-  success: boolean;
-  expired: boolean;
-  message: string;
+  started_at: string;
+  finished_at: string;
+  is_success: boolean;
+  error: string; // failed, expired
   command: string;
+  output: string;
   runtime: number;
 };

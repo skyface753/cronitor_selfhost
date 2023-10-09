@@ -1,30 +1,22 @@
+version: '3.8'
 services:
-  mongodb:
-    image: mongo:latest
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
-    ports:
-      - '27017:27017'
+  db:
+    container_name: pg_container
+    image: postgres
+    restart: always
     environment:
-      TZ: Europe/Berlin
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-    healthcheck:
-      test: 'curl -f http://localhost:27017'
-      interval: 5s
-      timeout: 10s
-      retries: 5
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: test_db # postgres_url: postgresql://root:root@localhost:5432/test_db
+    ports:
+      - '5432:5432'
 
-  express:
-    image: mongo-express:latest
-    ports:
-      - '8081:8081'
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - '5050:80'

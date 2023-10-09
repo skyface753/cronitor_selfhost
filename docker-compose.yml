@@ -9,8 +9,6 @@ services:
     environment:
       TZ: Europe/Berlin
       NODE_ENV: production
-    volumes:
-      - ./jobs.json:/jobs.json
 
   server:
     image: skyface753/cronitor-server:latest
@@ -24,9 +22,7 @@ services:
     environment:
       TZ: Europe/Berlin
       APIKEY: ${APIKEY}
-      MONGODB_CONNECTION_URI: ${MONGODB_CONNECTION_URI}
-      DB_NAME: ${DB_NAME}
-      COLL_NAME: ${COLL_NAME}
+      DATABASE_URL: ${DATABASE_URL}
       NOTIFY_MAIL: ${NOTIFY_MAIL}
       NOTIFY_DISCORD: ${NOTIFY_DISCORD}
       NOTIFY_SLACK: ${NOTIFY_SLACK}
@@ -40,7 +36,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SHOW_DOCS: ${SHOW_DOCS}
     depends_on:
-      - mongodb
+      - db
     volumes:
       - ./jobs.json:/jobs.json
 
@@ -67,24 +63,16 @@ services:
       - 'traefik.http.routers.cronitor-secured.service=cronitor-service' #<== Set service
       - 'traefik.http.services.cronitor-service.loadbalancer.server.port=80' #<== Set port
 
-  mongodb:
-    image: mongo:latest
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
-    volumes:
-      - ./data:/data/db
-    networks:
-      - cronitor
+  db:
+    container_name: pg_container
+    image: postgres
+    restart: always
     environment:
-      TZ: Europe/Berlin
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-    healthcheck:
-      test: 'curl -f http://localhost:27017'
-      interval: 5s
-      timeout: 10s
-      retries: 5
+      POSTGRES_USER: job_user
+      POSTGRES_PASSWORD: job_password
+      POSTGRES_DB: job_db # postgres_url: postgresql://job_user:job_password@db:5432/job_db
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
 
 networks:
   proxy:

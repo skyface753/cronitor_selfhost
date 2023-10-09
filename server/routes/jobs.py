@@ -1,14 +1,14 @@
 import server.config.config as config
-from fastapi import APIRouter, Body, HTTPException, Request, status, Header
+from fastapi import APIRouter, Body, HTTPException, status, Header
 from typing import List
 from server.models.jobs_results import InsertJobRun, InsertJobResultResponse, JobResultResponse
-from fastapi import APIRouter, Body, Request, status, HTTPException
+from fastapi import APIRouter, Body,  status, HTTPException
 from fastapi.encoders import jsonable_encoder
 import server.notifications.notify as notify
-from server.prisma.prisma import prisma
 from server.jobs import Jobs as JobsClass
 from prisma.models import JobRun, Job
 from prisma.types import JobRunCreateInput
+import datetime
 jobs = JobsClass()
 
 jobsRouter = APIRouter()
@@ -31,12 +31,14 @@ async def list_all_jobs():
 
 @jobsRouter.get("/{job_id}", response_description="get a job result", response_model=JobResultResponse)
 async def list_job(job_id: str):
-    # job = check_job_id(job_id)
-    job = await jobs.verify_by_id(job_id)
+    await jobs.verify_by_id(job_id)
+    job = await Job.prisma().find_first(where={"id": job_id, "enabled": True}, include={"runsResults": False})
+    # Get all runs for the job
+    job.runsResults = await JobRun.prisma().find_many(where={"job_id": job.id}, order={"id": "desc"})
     return JobResultResponse(job=job, response="OK")
     
 
-import datetime
+
 
 
 
@@ -46,16 +48,17 @@ async def insert_job_result(jobResult: InsertJobRun = Body(...), api_key: str = 
     check_api_key(api_key)
     # Check if Job ID is valid
     # job = check_job_id(jobResult.job_id)
-    job = await jobs.verify_by_id(jobResult.job_id)
-    print("Job", job)
+    await jobs.verify_by_id(jobResult.job_id)
+    
     # Insert Job Result
     jobResult = jsonable_encoder(jobResult)
     # Set the timestamp to the current time
     jobResult["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
     errorType = "" if jobResult["is_success"] else "failed"
     newJobRun = JobRunCreateInput(job_id=jobResult["job_id"], started_at=jobResult["started_at"], finished_at=jobResult["finished_at"], is_success=jobResult["is_success"], error=errorType, command=jobResult["command"], output=jobResult["output"], runtime=jobResult["runtime"])
-    await JobRun.prisma().create(newJobRun)
-    job = await jobs.verify_by_id(jobResult["job_id"])
+    newJobRun = await JobRun.prisma().create(newJobRun)
+    await jobs.verify_by_id(jobResult["job_id"])
+    job = await Job.prisma().find_first(where={"id": jobResult["job_id"], "enabled": True}, include={"runsResults": False})
     response = "OK"
     if jobResult["is_success"] == False: # Job failed
         notify.send_notification(jobResult["job_id"], "failed", jobResult["output"], jobResult["command"])
@@ -69,7 +72,8 @@ async def insert_job_result(jobResult: InsertJobRun = Body(...), api_key: str = 
             notify.send_notification(jobResult["job_id"], "was_not_waiting")
             response = "Job was not waiting -> Notify"
         await jobs.update_job(jobResult["job_id"], False, False, False)
-    insertJobResultResponse = InsertJobResultResponse(job=job, jobResult=newJobRun, response=response)
+    job = await Job.prisma().find_first(where={"id": jobResult["job_id"]}, include={"runsResults": False})
+    insertJobResultResponse = InsertJobResultResponse(job=job, response=response, insertedRun=newJobRun)
     return insertJobResultResponse
 
 @jobsRouter.post("/start", response_description='set running state of a job', status_code=status.HTTP_200_OK)
@@ -78,11 +82,12 @@ async def set_running_state(job_id: str, api_key: str = Header(...)):
     check_api_key(api_key)
     # Check if Job ID is valid
     # job = check_job_id(job_id)
-    job = await jobs.verify_by_id(job_id)
+    await jobs.verify_by_id(job_id)
+    
     # Set the running state of the job
     # update_job(job_id, None, None, True)
     await jobs.update_job(job_id, None, None, True)
-    return {"message": "Job running state set to true"}
+    return {"message": "Job running state set to: True"}
 
 @jobsRouter.put("/{job_id}/waiting", response_description='set waiting state of a job', status_code=status.HTTP_200_OK)
 async def set_waiting_state(job_id: str, api_key: str = Header(...)):
@@ -90,11 +95,11 @@ async def set_waiting_state(job_id: str, api_key: str = Header(...)):
     check_api_key(api_key)
     # Check if Job ID is valid
     # job = check_job_id(job_id)
-    job = await jobs.verify_by_id(job_id)
+    await jobs.verify_by_id(job_id)
     # Set the waiting state of the job
     # update_job(job_id, None, True, None)
     await jobs.update_job(job_id, None, True, None)
-    return {"message": "Job waiting state set to true"}
+    return {"message": "Job waiting state set to: True"}
     
 @jobsRouter.post("/{job_id}/grace_time_expired", response_description='grace time expired', status_code=status.HTTP_200_OK)
 async def grace_time_expired(job_id: str, api_key: str = Header(...)):
@@ -102,10 +107,11 @@ async def grace_time_expired(job_id: str, api_key: str = Header(...)):
     check_api_key(api_key)
     # Check if Job ID is valid
     # job = check_job_id(job_id)
-    job = await jobs.verify_by_id(job_id)
+    await jobs.verify_by_id(job_id)
+    job = await Job.prisma().find_first(where={"id": job_id}, include={"runsResults": False})
     # Check if the job is waiting
     if job.is_waiting == False:
-        raise HTTPException(status_code=400, detail="Job was not waiting")
+        return {"message": "Job was not waiting"}
     if config.DEV:
         print("Grace time expired")
     # Set the job to failed
@@ -113,7 +119,7 @@ async def grace_time_expired(job_id: str, api_key: str = Header(...)):
     newJobRun = JobRunCreateInput(job_id=job_id, is_success=False, error="expired", command="", runtime=0.0, started_at=datetime.datetime.utcnow(), finished_at=datetime.datetime.utcnow())
     await JobRun.prisma().create(newJobRun)
     # await jobs.update_job(job_id, True, False, False)
-    return {"message": "Grace time expired"}
+    return {"message": "Grace time expired -> Notify"}
     # if wasWaiting:
     #     if config.DEV:
     #         print("Jobs was waiting and did not execute in time!")

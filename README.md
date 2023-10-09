@@ -37,25 +37,23 @@ Copy and edit the `.env.example` file to `.env` and adjust the variables to your
 cp example.env .env
 ```
 
-| Variable               | Description                                                              | Required               | Default                                                            |
-| ---------------------- | ------------------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------ |
-| APIKEY                 | The API key to inject results                                            | true                   |                                                                    |
-| CLIENT_URL             | The url of the frontend (for cors)                                       | false                  | [SAME-SITE]                                                        |
-| MONGODB_CONNECTION_URI | The MongoDB connection URI                                               | false                  | mongodb://admin:admin@127.0.0.1:27017/jobs_db_dev?authSource=admin |
-| DB_NAME                | The MongoDB database name (should be the same as MONGODB_CONNECTION_URI) | false                  | jobs_db_dev                                                        |
-| COLL_NAME              | The MongoDB collection name                                              | false                  | job_results                                                        |
-| NOTIFY_DISCORD         | Enable Discord notifications                                             | false                  | false                                                              |
-| NOTIFY_MAIL            | Enable mail notifications                                                | false                  | false                                                              |
-| NOTIFY_SLACK           | Enable Slack notifications                                               | false                  | false                                                              |
-| DISCORD_WEBHOOK_URL    | The Discord webhook url                                                  | IF NOTIFY_DISCORD=true |                                                                    |
-| SLACK_WEBHOOK_URL      | The Slack webhook url                                                    | IF NOTIFY_SLACK=true   |                                                                    |
-| SMTP_HOST              | The SMTP host                                                            | IF NOTIFY_DISCORD=true |                                                                    |
-| SMTP_PORT              | The SMTP port                                                            | IF NOTIFY_DISCORD=true |                                                                    |
-| SMTP_USERNAME          | The SMTP username                                                        | IF NOTIFY_DISCORD=true |                                                                    |
-| SMTP_PASSWORD          | The SMTP password                                                        | IF NOTIFY_DISCORD=true |                                                                    |
-| SMTP_FROM              | The sender address of the emails                                         | IF NOTIFY_DISCORD=true |                                                                    |
-| SMTP_TO                | The receiver address of the emails                                       | IF NOTIFY_DISCORD=true |                                                                    |
-| SHOW_DOCS              | Show the docs at /api/v1/docs and /api/v1/redocs                         | false                  | false                                                              |
+| Variable            | Description                                                       | Required               | Default     |
+| ------------------- | ----------------------------------------------------------------- | ---------------------- | ----------- |
+| APIKEY              | The API key to inject results                                     | true                   |             |
+| CLIENT_URL          | The url of the frontend (for cors)                                | false                  | [SAME-SITE] |
+| DATABASE_URL        | The url of the postgres database (like in the docker-compose.yml) | true                   |             |
+| NOTIFY_DISCORD      | Enable Discord notifications                                      | false                  | false       |
+| NOTIFY_MAIL         | Enable mail notifications                                         | false                  | false       |
+| NOTIFY_SLACK        | Enable Slack notifications                                        | false                  | false       |
+| DISCORD_WEBHOOK_URL | The Discord webhook url                                           | IF NOTIFY_DISCORD=true |             |
+| SLACK_WEBHOOK_URL   | The Slack webhook url                                             | IF NOTIFY_SLACK=true   |             |
+| SMTP_HOST           | The SMTP host                                                     | IF NOTIFY_DISCORD=true |             |
+| SMTP_PORT           | The SMTP port                                                     | IF NOTIFY_DISCORD=true |             |
+| SMTP_USERNAME       | The SMTP username                                                 | IF NOTIFY_DISCORD=true |             |
+| SMTP_PASSWORD       | The SMTP password                                                 | IF NOTIFY_DISCORD=true |             |
+| SMTP_FROM           | The sender address of the emails                                  | IF NOTIFY_DISCORD=true |             |
+| SMTP_TO             | The receiver address of the emails                                | IF NOTIFY_DISCORD=true |             |
+| SHOW_DOCS           | Show the docs at /api/v1/docs and /api/v1/redocs                  | false                  | false       |
 
 ### Jobs
 
@@ -86,8 +84,8 @@ For the above crontab example the `jobs.json` should look like this:
   - [x] Slack
 - [x] Web UI
 - [x] API (with [Docs and Redocs](environment-variables))
+- [x] Database
+  - [x] Postgres
+  - [] Usage for multi instances
 
 ## TODO
-
-- [ ] Webhook notifications
-  - [ ] Telegram

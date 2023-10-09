@@ -28,11 +28,11 @@ export default function Home() {
       <div>
         <div className='row'>
           {jobs.map((job) => (
-            <div className='column' key={job.job_id}>
+            <div className='column' key={job.id}>
               <div className='card'>
-                <a href={`/jobs/${job.job_id}`}>
+                <a href={`/jobs/${job.id}`}>
                   <div className='card-header'>
-                    {job.running && (
+                    {job.is_running && (
                       <div className='lds-ring zoom-small'>
                         <div></div>
                         <div></div>
@@ -40,37 +40,41 @@ export default function Home() {
                         <div></div>
                       </div>
                     )}
-                    <h1>{job.job_id}</h1>
+                    <h1>{job.id}</h1>
                   </div>
-                  {job.results.length > 0 && (
+                  {job.runsResults.length > 0 && (
                     <p>
                       {Intl.DateTimeFormat('de-DE', {
                         dateStyle: 'medium',
                         timeStyle: 'medium',
                       }).format(
-                        new Date(job.results[job.results.length - 1].timestamp)
+                        new Date(
+                          job.runsResults[job.runsResults.length - 1].started_at
+                        )
                       )}
                       <br />
-                      {job.results[job.results.length - 1].success
+                      {job.runsResults[job.runsResults.length - 1].is_success
                         ? 'Success'
-                        : job.results[job.results.length - 1].expired
+                        : job.runsResults[job.runsResults.length - 1].error ===
+                          'expired'
                         ? 'Expired'
                         : 'Failed'}
                       <br />
                       {'Runtime: '}
-                      {job.results[job.results.length - 1].runtime} seconds
+                      {job.runsResults[job.runsResults.length - 1].runtime}{' '}
+                      seconds
                     </p>
                   )}
                 </a>
 
                 <ul className='hlist'>
-                  {job.results.map((result) => (
-                    <li key={result._id}>
+                  {job.runsResults.map((result) => (
+                    <li key={result.id}>
                       <span
                         className={`dot tooltip ${
-                          result.success
+                          result.is_success
                             ? 'green'
-                            : result.expired
+                            : result.error === 'expired'
                             ? 'orange'
                             : 'red'
                         }`}
@@ -79,11 +83,16 @@ export default function Home() {
                           {Intl.DateTimeFormat('de-DE', {
                             dateStyle: 'medium',
                             timeStyle: 'medium',
-                          }).format(new Date(result.timestamp))}{' '}
+                          }).format(new Date(result.started_at))}
+                          {' - '}
+                          {Intl.DateTimeFormat('de-DE', {
+                            dateStyle: 'medium',
+                            timeStyle: 'medium',
+                          }).format(new Date(result.finished_at))}
                           <br />
-                          {result.success
+                          {result.is_success
                             ? 'Success'
-                            : result.expired
+                            : result.error === 'expired'
                             ? 'Expired'
                             : 'Failed'}
                         </span>
