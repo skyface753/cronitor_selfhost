@@ -49,7 +49,7 @@ body {
 
 /* Style the counter cards */
 .card {
-  box-shadow: 0 6px 10px 0 rgba(var(--foreground-rgb), 0.2);
+  box-shadow: -1px 1px 7px 5px rgba(var(--foreground-rgb), 0.2);
   padding: 16px;
   text-align: center;
   background-color: rgb(var(--background-end-rgb));
