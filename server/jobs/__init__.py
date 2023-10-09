@@ -74,8 +74,8 @@ class Jobs:
         
     async def create_dummy_jobs(self):
         should_success_job = JobCreateInput(id="should_success", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
-        should_expired_job = JobCreateInput(id="should_expired", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
-        should_fail_job = JobCreateInput(id="should_fail", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
+        should_expired_job = JobCreateInput(id="should_expired", cron="* * * * *", grace_time=10, is_waiting=False, is_running=True, has_failed=False, enabled=True)
+        should_fail_job = JobCreateInput(id="should_fail", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=True, enabled=True)
         should_be_disabled_job = JobCreateInput(id="should_be_disabled", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=False)
         await Job.prisma().create(should_success_job)
         await Job.prisma().create(should_expired_job)

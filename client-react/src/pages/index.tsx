@@ -32,6 +32,13 @@ export default function Home() {
               <div className='card'>
                 <a href={`/jobs/${job.id}`}>
                   <div className='card-header'>
+                    <h1
+                      style={{
+                        marginRight: '3px',
+                      }}
+                    >
+                      {job.id}
+                    </h1>
                     {job.is_running && (
                       <div className='lds-ring zoom-small'>
                         <div></div>
@@ -40,7 +47,10 @@ export default function Home() {
                         <div></div>
                       </div>
                     )}
-                    <h1>{job.id}</h1>
+                    {!job.is_running &&
+                      ((job.has_failed && <div className='dot red'></div>) || (
+                        <div className='dot green'></div>
+                      ))}
                   </div>
                   {job.runsResults.length > 0 && (
                     <p>
