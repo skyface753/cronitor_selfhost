@@ -98,6 +98,7 @@ So it is not enough to delete the job from the `jobs.json`.
 Steps:
 
 - Delete the job from the `jobs.json`
+- Restart the server
 - Run the `runner/delete_job.sh` script
 
 ```bash
@@ -113,7 +114,13 @@ nano jobs.json
 # Remove the job "testjob"
 ```
 
-Now you can delete the job from the database.
+Restart the server
+
+```bash
+docker-compose restart
+```
+
+Wait a few seconds and run the `runner/delete_job.sh` script.
 
 ```bash
 ./runner/delete_job.sh

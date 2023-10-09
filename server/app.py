@@ -14,10 +14,12 @@ import server.config.config as config
     
 docs_url = "/api/v1/docs" if config.SHOW_DOCS else None
 redoc_url = "/api/v1/redocs" if config.SHOW_DOCS else None
+openapi_url = "/api/v1/openapi.json" if config.SHOW_DOCS else None
 app = FastAPI(
     title="Cronitor Selfhost API",
     docs_url=docs_url,
     redoc_url=redoc_url,
+    openapi_url=openapi_url,
 )
 
 origins = [
