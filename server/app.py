@@ -54,24 +54,7 @@ async def shutdown_db_client():
 apiPrefix = "/api/v1"
 
 from server.routes.jobs import jobsRouter
-import random
-import string
 app.include_router(jobsRouter, prefix="/api/v1/jobs")
-
-@app.get("/testPrisma")
-async def root():
-    # Insert a new user
-    #Random mail
-    mail = ''.join(random.choice(string.ascii_letters) for i in range(10))
-    newUser = await prisma.user.create(
-        data={
-            'name': 'Robert',
-            'email': mail + '@example.com',
-        },
-    )
-    # Get all users
-    result = await prisma.user.find_many()
-    return result
 
 def run():
     LOGGING_CONFIG["formatters"]["default"]["fmt"] = "%(asctime)s [%(name)s] %(levelprefix)s %(message)s"

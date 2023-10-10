@@ -151,7 +151,7 @@ export default function Page() {
       >
         {router.query.id}
       </h1>
-      {job?.is_running && (
+      {/* {job?.is_running && (
         <h2
           style={{
             display: 'flex',
@@ -166,7 +166,48 @@ export default function Page() {
           </div>
           Running
         </h2>
-      )}
+      )} */}
+      <div className='job-infos'>
+        <span style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ marginRight: '5px' }}>Status:</div>
+          {job?.is_running ? (
+            <div>
+              <div className='lds-ring zoom-small'>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+              Running
+            </div>
+          ) : (
+            'Not running'
+          )}
+          {/* </span> */}
+        </span>
+        <span>
+          Cron: <span className='font-bold'>{job?.cron}</span>
+        </span>
+        <span>
+          Grace period:{' '}
+          <span className='font-bold'>
+            {job?.grace_time}
+            {'s'}
+          </span>
+        </span>
+        <span>
+          Is running:{' '}
+          <span className='font-bold'>{job?.is_running ? 'Yes' : 'No'}</span>
+        </span>
+        <span>
+          Is waiting:{' '}
+          <span className='font-bold'>{job?.is_waiting ? 'Yes' : 'No'}</span>
+        </span>
+        <span>
+          Has failed:{' '}
+          <span className='font-bold'>{job?.has_failed ? 'Yes' : 'No'}</span>
+        </span>
+      </div>
       <table className='res-table'>
         <thead className='res-table-head'>
           <tr>

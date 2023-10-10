@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { SkyLoader } from '@/components/loader/skyloader';
 import { Job } from '@/utils/types';
 import { getCrons } from '@/utils/api';
+import cronstrue from 'cronstrue';
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -52,29 +53,51 @@ export default function Home() {
                         <div className='dot green'></div>
                       ))}
                   </div>
-                  {job.runsResults.length > 0 && (
-                    <p>
-                      {Intl.DateTimeFormat('de-DE', {
-                        dateStyle: 'medium',
-                        timeStyle: 'medium',
-                      }).format(
-                        new Date(
-                          job.runsResults[job.runsResults.length - 1].started_at
-                        )
-                      )}
-                      <br />
-                      {job.runsResults[job.runsResults.length - 1].is_success
-                        ? 'Success'
-                        : job.runsResults[job.runsResults.length - 1].error ===
-                          'expired'
-                        ? 'Expired'
-                        : 'Failed'}
-                      <br />
-                      {'Runtime: '}
-                      {job.runsResults[job.runsResults.length - 1].runtime}{' '}
-                      seconds
-                    </p>
-                  )}
+                  <h3>Cron: {cronstrue.toString(job.cron)}</h3>
+                  <h3>
+                    Grace period: {job.grace_time}
+                    {'s'}
+                  </h3>
+                  {/* Horizontal divider */}
+                  <hr
+                    style={{
+                      marginTop: '5px',
+                    }}
+                  />
+                  <div
+                    style={{
+                      marginTop: '5px',
+                    }}
+                  >
+                    {job.runsResults.length > 0 && (
+                      <p>
+                        <h3>Last Run:</h3>
+                        {Intl.DateTimeFormat('de-DE', {
+                          dateStyle: 'medium',
+                          timeStyle: 'medium',
+                        }).format(
+                          new Date(
+                            job.runsResults[
+                              job.runsResults.length - 1
+                            ].started_at
+                          )
+                        )}
+                        <br />
+                        {job.runsResults[job.runsResults.length - 1].is_success
+                          ? 'Success'
+                          : job.runsResults[job.runsResults.length - 1]
+                              .error === 'expired'
+                          ? 'Expired'
+                          : 'Failed'}
+                        <br />
+                        {'Runtime: '}
+                        {
+                          job.runsResults[job.runsResults.length - 1].runtime
+                        }{' '}
+                        seconds
+                      </p>
+                    )}
+                  </div>
                 </a>
 
                 <ul className='hlist'>
