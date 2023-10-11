@@ -4,3 +4,5 @@ server/venv
 data/
 site/
 pgdata/
+.DS_Store
+**/.DS_Store

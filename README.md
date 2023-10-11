@@ -4,6 +4,16 @@ Cronitor is a monitoring platform for your cron jobs, background tasks and sched
 
 This Repository is a self-developed, self-hosted version of Cronitor by [Skyface](https://skyface.de).
 
+## Example
+
+#### Overview of all jobs
+
+<img src="assets/images/index.png" alt="Index" width="50%">
+
+#### Job details
+
+<img src="assets/images/restic_job.png" alt="Job" width="50%">
+
 ## Installation
 
 ### Runner
@@ -16,11 +26,15 @@ chmod +x scripts/runner.sh
 
 ### Config
 
-Edit the `scripts/config.sh` file and set the API_ENDPOINT and `API_KEY` (same as in the `.env` file).
+Edit the `scripts/config.sh` file and set the `API_ENDPOINT` and `API_KEY` (same as in the following `.env` file).
 
 ### Jobs
 
 The server needs a `jobs.json` file to know which jobs to run.
+
+> **NAMES** must be unique and can only contain letters, numbers and underscores (No spaces are allowed).
+
+> **GRACE TIME** is in seconds. If the job runs longer than the grace time, it will be marked as failed.
 
 #### Automatically
 
@@ -33,14 +47,11 @@ chmod +x scripts/job_generator.sh
 ./scripts/job_generator.sh
 ```
 
-> **NOTE** Names must be unique and can only contain letters, numbers and underscores (No spaces are allowed).
-> **NOTE** The grace time is in seconds. If the job runs longer than the grace time it will be marked as failed.
-
 #### Manually
 
 Fill the `jobs.json` with your cronjobs.
 
-For the above crontab example the `jobs.json` should look like this:
+An example with the job id (name) `testjob`, a cron expression of `* * * * *` and a grace time of `60` seconds.
 
 ```json
 [
@@ -51,23 +62,24 @@ For the above crontab example the `jobs.json` should look like this:
 ]
 ```
 
-> Note: The `grace_time` is the time in seconds the job is allowed to run. If the job runs longer than the `grace_time` it will be marked as failed.
-
 ### Crontab
 
 Wrap all your crontab commands with the `scripts/runner.sh` script
+
+So instead of
+
+```bash
+* * * * * echo "hello world"
+```
+
+use
 
 ```bash
 crontab -e
 
 # Example
+# <cron_expression> <path_to_runner.sh> <job_id> <command>
 * * * * * /home/user/cronitor_selfhost/scripts/runner.sh testjob echo "hello world"
-```
-
-### Start the server
-
-```bash
-docker-compose up -d --build
 ```
 
 ### Environment variables
@@ -96,6 +108,12 @@ cp example.env .env
 | SMTP_TO             | The receiver address of the emails                                 | IF NOTIFY_DISCORD=true |             |
 | SHOW_DOCS           | Show the docs at /api/v1/docs and /api/v1/redocs                   | false                  | false       |
 
+### Start the server
+
+```bash
+docker-compose up -d --build
+```
+
 ## Features
 
 - [x] Self-hosted
@@ -110,9 +128,10 @@ cp example.env .env
 - [x] API (with [Docs and Redocs](environment-variables))
 - [x] Database
   - [x] Postgres
-  - [] Usage for multi instances
 
 ## TODO
+
+- [] Usage for multi instances (stateless)
 
 ## Delete Jobs
 
