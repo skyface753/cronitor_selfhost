@@ -13,7 +13,7 @@ class Jobs:
         with open('jobs.json') as json_file:
             data = json.load(json_file)
             for key in data:
-                tmp.append({"id": key, "cron": data[key]["cron"], "grace_time": data[key]["grace_time"], "waiting": False, "has_failed": False, "running": False})
+                tmp.append({"id": key, "cron": data[key]["cron"], "grace_time": data[key]["grace_time"], "waiting": False, "has_failed": False, "running": False, "has_expired": False})
         # Set all jobs in database enabled to False
         await Job.prisma().update_many(where={}, data={"enabled": False})
         # Store the jobs in the database (if not already there)
@@ -21,7 +21,7 @@ class Jobs:
             jobInDB = await Job.prisma().find_first(where={"id": job["id"]})
             if not jobInDB:
                 grace_time = int(job["grace_time"])
-                newJob = JobCreateInput(id=job["id"], cron=job["cron"], grace_time=grace_time, is_waiting=False, is_running=False, has_failed=False, enabled=True)
+                newJob = JobCreateInput(id=job["id"], cron=job["cron"], grace_time=grace_time, is_waiting=False, is_running=False, has_failed=False, enabled=True, has_expired=False)
                 await Job.prisma().create(newJob)
             else:
                 if jobInDB.cron != job["cron"] or jobInDB.grace_time != job["grace_time"]:
@@ -31,7 +31,7 @@ class Jobs:
     
     
            
-    async def update_job(self, id, had_failed=None, waiting=None, running=None):
+    async def update_job(self, id, had_failed=None, waiting=None, running=None, has_expired=None):
         # Update the job in the database
         update = {}
         if had_failed is not None:
@@ -40,6 +40,8 @@ class Jobs:
             update["is_waiting"] = waiting
         if running is not None:
             update["is_running"] = running
+        if has_expired is not None:
+            update["has_expired"] = has_expired
         await Job.prisma().update(where={"id": id}, data=update)
        
             
@@ -74,7 +76,7 @@ class Jobs:
         
     async def create_dummy_jobs(self):
         should_success_job = JobCreateInput(id="should_success", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True)
-        should_expired_job = JobCreateInput(id="should_expired", cron="* * * * *", grace_time=10, is_waiting=False, is_running=True, has_failed=False, enabled=True)
+        should_expired_job = JobCreateInput(id="should_expired", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=True, has_expired=True)
         should_fail_job = JobCreateInput(id="should_fail", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=True, enabled=True)
         should_be_disabled_job = JobCreateInput(id="should_be_disabled", cron="* * * * *", grace_time=10, is_waiting=False, is_running=False, has_failed=False, enabled=False)
         await Job.prisma().create(should_success_job)

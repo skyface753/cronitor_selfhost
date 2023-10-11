@@ -5,6 +5,7 @@ export type Job = {
   is_waiting: boolean;
   is_running: boolean;
   has_failed: boolean;
+  has_expired: boolean;
   runsResults: JobResult[];
 };
 export type JobResult = {

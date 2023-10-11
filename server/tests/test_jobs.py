@@ -25,7 +25,7 @@ def test_all_jobs(client):
     assert response.json()[0]["id"] == "should_expired"
     assert len(response.json()[0]["runsResults"]) == 1
     assert response.json()[1]["id"] == "should_fail"
-    assert len(response.json()[1]["runsResults"]) == 1
+    assert len(response.json()[1]["runsResults"]) == 3
     assert response.json()[2]["id"] == "should_success"
     assert len(response.json()[2]["runsResults"]) == 2
     
@@ -78,6 +78,7 @@ def test_insert_result(client):
     assert job["is_waiting"] == False
     assert job["has_failed"] == False
     assert job["is_running"] == False
+    assert job["has_expired"] == False
     assert insertedRun["job_id"] == "should_success"
     assert insertedRun["is_success"] == True
     assert insertedRun["error"] == ""
@@ -100,6 +101,12 @@ def test_job_expire(client):
     assert response.json()["message"] == "Job waiting state set to: True"
     response = client.post(apiPrefix + "/jobs/should_expired/grace_time_expired", headers={"api-key": APIKEY})
     assert response.json()["message"] == "Grace time expired -> Notify"    
+    response = client.get(apiPrefix + "/jobs/should_expired")
+    assert response.json()["job"]["id"] == "should_expired"
+    assert response.json()["job"]["is_waiting"] == False
+    assert response.json()["job"]["has_failed"] == False
+    assert response.json()["job"]["is_running"] == False
+    assert response.json()["job"]["has_expired"] == True
     
 def test_failed(client):
     # Set waiting
@@ -123,6 +130,7 @@ def test_success(client):
     assert response.json()["job"]["is_waiting"] == True
     assert response.json()["job"]["has_failed"] == False
     assert response.json()["job"]["is_running"] == True
+    assert response.json()["job"]["has_expired"] == False
     # Insert success
     response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.json()["response"] == "OK"
@@ -130,6 +138,7 @@ def test_success(client):
     assert response.json()["job"]["is_waiting"] == False
     assert response.json()["job"]["has_failed"] == False
     assert response.json()["job"]["is_running"] == False
+    assert response.json()["job"]["has_expired"] == False
     
 def test_success_resolved(client):
     # PREPARE TEST
@@ -146,6 +155,7 @@ def test_success_resolved(client):
     assert response.json()["job"]["is_waiting"] == False
     assert response.json()["job"]["has_failed"] == True
     assert response.json()["job"]["is_running"] == False
+    assert response.json()["job"]["has_expired"] == False
     # ACTUAL TEST
     # Insert Success
     response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
@@ -154,6 +164,7 @@ def test_success_resolved(client):
     assert response.json()["job"]["is_waiting"] == False
     assert response.json()["job"]["has_failed"] == False
     assert response.json()["job"]["is_running"] == False
+    assert response.json()["job"]["has_expired"] == False
 
 def test_success_not_waiting(client):
     # Set job to running
@@ -166,6 +177,7 @@ def test_success_not_waiting(client):
     assert response.json()["job"]["is_waiting"] == False
     assert response.json()["job"]["has_failed"] == False
     assert response.json()["job"]["is_running"] == False
+    assert response.json()["job"]["has_expired"] == False
     
     
 def test_insert_fail_by_apikey(client):

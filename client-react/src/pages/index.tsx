@@ -49,9 +49,11 @@ export default function Home() {
                       </div>
                     )}
                     {!job.is_running &&
-                      ((job.has_failed && <div className='dot red'></div>) || (
-                        <div className='dot green'></div>
-                      ))}
+                      ((job.has_failed && <div className='dot red'></div>) ||
+                        // <div className='dot green'></div>
+                        (job.has_expired && (
+                          <div className='dot orange'></div>
+                        )) || <div className='dot green'></div>)}
                   </div>
                   <h3>Cron: {cronstrue.toString(job.cron)}</h3>
                   <h3>

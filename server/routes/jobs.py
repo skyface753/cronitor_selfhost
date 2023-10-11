@@ -76,7 +76,7 @@ async def insert_job_result(jobResult: InsertJobRun = Body(...), api_key: str = 
     response = "OK"
     if jobResult["is_success"] == False: # Job failed
         notify.send_notification(jobResult["job_id"], "failed", jobResult["output"], jobResult["command"])
-        await jobs.update_job(jobResult["job_id"], True, False, False)
+        await jobs.update_job(jobResult["job_id"], True, False, False, has_expired=False)
         response = "Job failed -> Notify"
     else:
         if job.has_failed == True:
@@ -85,7 +85,7 @@ async def insert_job_result(jobResult: InsertJobRun = Body(...), api_key: str = 
         elif job.is_waiting == False:
             notify.send_notification(jobResult["job_id"], "was_not_waiting")
             response = "Job was not waiting -> Notify"
-        await jobs.update_job(jobResult["job_id"], False, False, False)
+        await jobs.update_job(jobResult["job_id"], False, False, False, has_expired=False)
     job = await Job.prisma().find_first(where={"id": jobResult["job_id"]}, include={"runsResults": False})
     insertJobResultResponse = InsertJobResultResponse(job=job, response=response, insertedRun=newJobRun)
     return insertJobResultResponse
@@ -100,7 +100,7 @@ async def set_running_state(job_id: str, api_key: str = Header(...)):
     
     # Set the running state of the job
     # update_job(job_id, None, None, True)
-    await jobs.update_job(job_id, None, None, True)
+    await jobs.update_job(job_id, None, None, True, has_expired=False)
     return {"message": "Job running state set to: True"}
 
 @jobsRouter.put("/{job_id}/waiting", response_description='set waiting state of a job', status_code=status.HTTP_200_OK)
@@ -112,7 +112,7 @@ async def set_waiting_state(job_id: str, api_key: str = Header(...)):
     await jobs.verify_by_id(job_id)
     # Set the waiting state of the job
     # update_job(job_id, None, True, None)
-    await jobs.update_job(job_id, None, True, None)
+    await jobs.update_job(job_id, None, True, None, has_expired=False)
     return {"message": "Job waiting state set to: True"}
     
 @jobsRouter.post("/{job_id}/grace_time_expired", response_description='grace time expired', status_code=status.HTTP_200_OK)
@@ -132,6 +132,7 @@ async def grace_time_expired(job_id: str, api_key: str = Header(...)):
     notify.send_notification(job_id, "expired")
     newJobRun = JobRunCreateInput(job_id=job_id, is_success=False, error="expired", command="", runtime=0.0, started_at=datetime.datetime.utcnow(), finished_at=datetime.datetime.utcnow())
     await JobRun.prisma().create(newJobRun)
+    await jobs.update_job(job_id, False, False, False, has_expired=True)
     # await jobs.update_job(job_id, True, False, False)
     return {"message": "Grace time expired -> Notify"}
     # if wasWaiting:

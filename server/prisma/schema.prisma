@@ -18,6 +18,7 @@ model Job{
   is_waiting Boolean
   is_running Boolean
   has_failed Boolean
+  has_expired Boolean @default(false)
   runsResults JobRun[]
   enabled Boolean
 }
