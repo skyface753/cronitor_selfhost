@@ -207,6 +207,10 @@ export default function Page() {
           Has failed:{' '}
           <span className='font-bold'>{job?.has_failed ? 'Yes' : 'No'}</span>
         </span>
+        <span>
+          Has expired:{' '}
+          <span className='font-bold'>{job?.has_expired ? 'Yes' : 'No'}</span>
+        </span>
       </div>
       <table className='res-table'>
         <thead className='res-table-head'>
