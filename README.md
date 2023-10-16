@@ -182,3 +182,8 @@ testjob
 Enter job id to delete: testjob
 {"message":"Job deleted"}
 ```
+
+## Logs
+
+The error logs are also stored in the folder `logs`.
+The folder will be created automatically, when the first error occurs.

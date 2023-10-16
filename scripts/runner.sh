@@ -32,6 +32,7 @@ curl -s -X POST -H "Content-Type: application/json" -H "api-key: ${API_KEY}" ${A
 BOOL="true"
 start=`date +%s`
 TMPFILENAME=$(mktemp)
+trap "rm -f $TMPFILENAME" EXIT
 
 # Create file with x-www-form-urlencoded
 echo "job_id=${JOB_ID}&output=" > $TMPFILENAME
@@ -44,24 +45,6 @@ end=`date +%s`
 rumtime=$((end-start))
 echo "Command took $rumtime seconds"
 
-# Remove all newlines from the output
-# ERROR=$(echo "${output}" | tr -d '\n')
-# # Remove quotes
-# ERROR=$(echo "${ERROR}" | tr -d '"')
-# # Remove backslashes
-# ERROR=$(echo "${ERROR}" | tr -d '\\')
-# # Remove single quotes
-# ERROR=$(echo "${ERROR}" | tr -d "'")
-# # Remove } characters
-# ERROR=$(echo "${ERROR}" | tr -d '}')
-# # Remove { characters
-# ERROR=$(echo "${ERROR}" | tr -d '{')
-# # Remove [ characters
-# ERROR=$(echo "${ERROR}" | tr -d '[')
-# # Remove ] characters
-# ERROR=$(echo "${ERROR}" | tr -d ']')
-# # Remove carriage returns
-# ERROR=$(echo "${ERROR}" | tr -d '\r')
 
 COMMAND=$(echo "${C}" | tr -d '\n')
 COMMAND=$(echo "${COMMAND}" | tr -d '"')
@@ -69,13 +52,13 @@ COMMAND=$(echo "${COMMAND}" | tr -d '\\')
 # Remove single quotes
 COMMAND=$(echo "${COMMAND}" | tr -d "'")
 
-echo "Command:"
-echo $COMMAND
-echo "Output:"
-echo $TMPFILENAME
-cat $TMPFILENAME
-echo "Bool:"
-echo $BOOL
+# echo "Command:"
+# echo $COMMAND
+# echo "Output:"
+# echo $TMPFILENAME
+# cat $TMPFILENAME
+# echo "Bool:"
+# echo $BOOL
 
 # write rest of output to file
 echo "&is_success=${BOOL}&command=${COMMAND}&runtime=${rumtime}&started_at=${start}&finished_at=${end}" >> $TMPFILENAME
@@ -86,16 +69,22 @@ echo "&is_success=${BOOL}&command=${COMMAND}&runtime=${rumtime}&started_at=${sta
 if [ $rumtime -lt 5 ]; then
     sleep $((5-rumtime))
 fi
+
 API_RUNNER_ENDPOINT=${API_ENDPOINT}jobs/insert
 # Send the output to the API endpoint, with the API key and job ID and a boolean indicating whether the command was successful
-curl -X POST -d "@${TMPFILENAME}" -H "api-key: ${API_KEY}" ${API_RUNNER_ENDPOINT} 
+curl -X POST -d "@${TMPFILENAME}" -H "api-key: ${API_KEY}" ${API_RUNNER_ENDPOINT} > /dev/null 2>&1
 # curl -X POST -H "Content-Type: application/json" -d "{\"job_id\":\"${JOB_ID}\",\"output\":\"${ERROR}\",\"is_success\":${BOOL},\"command\":\"${COMMAND}\",\"runtime\":${rumtime},\"started_at\":${start},\"finished_at\":${end}}" -H "api-key: ${API_KEY}" ${API_RUNNER_ENDPOINT}
-# Delete the temporary file
-rm $TMPFILENAME
 # If the BOOL is true, the command succeeded, so return 0, otherwise return 1
 if [ "$BOOL" = "true" ]; then
     exit 0
 else
+    # Copy the temporary file to stderr
+    cat $TMPFILENAME >&2
+    # Copy the temporary file to ${MYDIR}/../logs/cron-runner-${JOB_ID}-$(date +%Y-%m-%d).log
+    # Create folder if it doesn't exist
+    mkdir -p ${MYDIR}/../logs
+    # Copy the temporary file to the log file
+    cp $TMPFILENAME ${MYDIR}/../logs/cron-runner-${JOB_ID}-$(date +%Y-%m-%d).log
     echo "Command failed" >&2
     exit 1
 fi

@@ -69,7 +69,7 @@ def test_delete_disabled_job_fail_by_enabled(client):
     assert response.json()["detail"] == "Job is not disabled! Please remove the job from the jobs.json file and restart the server!"
     
 def test_insert_result(client):
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     job = response.json()["job"]
     insertedRun = response.json()["insertedRun"]
     responseMessage = response.json()["response"]
@@ -90,7 +90,7 @@ def test_insert_result(client):
     assert responseMessage == "Job was not waiting -> Notify"
 
 def test_insert_in_disabled(client):
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_be_disabled", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_be_disabled", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.status_code == 400
     assert response.json()["detail"] == "Job is disabled"
     
@@ -112,7 +112,7 @@ def test_failed(client):
     # Set waiting
     response = client.put(apiPrefix + "/jobs/should_fail/waiting", headers={"api-key": APIKEY})
     assert response.json()["message"] == "Job waiting state set to: True"
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_fail", "is_success": False, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_fail", "is_success": False, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.json()["response"] == "Job failed -> Notify"
     response = client.post(apiPrefix + "/jobs/should_fail/grace_time_expired", headers={"api-key": APIKEY})
     assert response.json()["message"] == "Job was not waiting"
@@ -132,7 +132,7 @@ def test_success(client):
     assert response.json()["job"]["is_running"] == True
     assert response.json()["job"]["has_expired"] == False
     # Insert success
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.json()["response"] == "OK"
     assert response.json()["job"]["id"] == "should_success"
     assert response.json()["job"]["is_waiting"] == False
@@ -149,7 +149,7 @@ def test_success_resolved(client):
     response = client.post(apiPrefix + "/jobs/start?job_id=should_success", headers={"api-key": APIKEY})
     assert response.json()["message"] == "Job running state set to: True"
     # Insert Failed
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": False, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_success", "is_success": False, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.json()["response"] == "Job failed -> Notify"
     assert response.json()["job"]["id"] == "should_success"
     assert response.json()["job"]["is_waiting"] == False
@@ -158,7 +158,7 @@ def test_success_resolved(client):
     assert response.json()["job"]["has_expired"] == False
     # ACTUAL TEST
     # Insert Success
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.json()["response"] == "Job resolved -> Notify"
     assert response.json()["job"]["id"] == "should_success"
     assert response.json()["job"]["is_waiting"] == False
@@ -171,7 +171,7 @@ def test_success_not_waiting(client):
     response = client.post(apiPrefix + "/jobs/start?job_id=should_success", headers={"api-key": APIKEY})
     assert response.json()["message"] == "Job running state set to: True"
     # Insert Success
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_success", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": APIKEY})
     assert response.json()["response"] == "Job was not waiting -> Notify"
     assert response.json()["job"]["id"] == "should_success"
     assert response.json()["job"]["is_waiting"] == False
@@ -181,6 +181,6 @@ def test_success_not_waiting(client):
     
     
 def test_insert_fail_by_apikey(client):
-    response = client.post(apiPrefix + "/jobs/insert", json={"job_id": "should_fail", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": "wrong"})
+    response = client.post(apiPrefix + "/jobs/insert", data={"job_id": "should_fail", "is_success": True, "output": "Test Message", "command": "echo 'Hallo Welt'", "started_at": "2021-01-01T00:00:00.000Z", "finished_at": "2021-01-01T00:00:00.000Z", "runtime": 2.0}, headers={"api-key": "wrong"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid API Key"

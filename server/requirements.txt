@@ -8,3 +8,4 @@ pytest
 discord-webhook
 slack_sdk
 prisma
+python-multipart
