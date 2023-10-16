@@ -2,7 +2,7 @@ import server.config.config as config
 from fastapi import APIRouter, Body, HTTPException, status, Header
 from typing import List
 from server.models.jobs_results import InsertJobRun, InsertJobResultResponse, JobResultResponse
-from fastapi import APIRouter, Body,  status, HTTPException
+from fastapi import APIRouter, Body,  status, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 import server.notifications.notify as notify
 from server.jobs import Jobs as JobsClass
@@ -57,7 +57,7 @@ async def list_job(job_id: str):
 
 
 @jobsRouter.post("/insert", response_description='insert a job result', status_code=status.HTTP_201_CREATED,response_model=InsertJobResultResponse)
-async def insert_job_result(jobResult: InsertJobRun = Body(...), api_key: str = Header(...)):
+async def insert_job_result( api_key: str = Header(...),jobResult: InsertJobRun = Depends(InsertJobRun.as_form)):
     # Check if API Key is valid
     check_api_key(api_key)
     # Check if Job ID is valid
