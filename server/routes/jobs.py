@@ -1,13 +1,14 @@
 import server.config.config as config
-from fastapi import APIRouter, Body, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header
 from typing import List
 from server.models.jobs_results import InsertJobRun, InsertJobResultResponse, JobResultResponse
-from fastapi import APIRouter, Body,  status, HTTPException, Depends
+from fastapi import APIRouter,  status, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 import server.notifications.notify as notify
 from server.jobs import Jobs as JobsClass
 from prisma.models import JobRun, Job
 from prisma.types import JobRunCreateInput
+from prisma.enums import JobRunResult
 import datetime
 jobs = JobsClass()
 
@@ -68,13 +69,13 @@ async def insert_job_result( api_key: str = Header(...),jobResult: InsertJobRun 
     jobResult = jsonable_encoder(jobResult)
     # Set the timestamp to the current time
     jobResult["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
-    errorType = "" if jobResult["is_success"] else "failed"
-    newJobRun = JobRunCreateInput(job_id=jobResult["job_id"], started_at=jobResult["started_at"], finished_at=jobResult["finished_at"], is_success=jobResult["is_success"], error=errorType, command=jobResult["command"], output=jobResult["output"], runtime=jobResult["runtime"])
+    newJobRun = JobRunCreateInput(job_id=jobResult["job_id"], started_at=jobResult["started_at"], finished_at=jobResult["finished_at"], result=jobResult["result"], command=jobResult["command"], output=jobResult["output"], runtime=jobResult["runtime"])
     newJobRun = await JobRun.prisma().create(newJobRun)
     await jobs.verify_by_id(jobResult["job_id"])
     job = await Job.prisma().find_first(where={"id": jobResult["job_id"], "enabled": True}, include={"runsResults": False})
     response = "OK"
-    if jobResult["is_success"] == False: # Job failed
+    # if jobResult["is_success"] == False: # Job failed
+    if jobResult["result"] == JobRunResult.FAILED: # Job failed
         notify.send_notification(jobResult["job_id"], "failed", jobResult["output"], jobResult["command"])
         await jobs.update_job(jobResult["job_id"], True, False, False, has_expired=False)
         response = "Job failed -> Notify"
@@ -120,7 +121,6 @@ async def grace_time_expired(job_id: str, api_key: str = Header(...)):
     # Check if API Key is valid
     check_api_key(api_key)
     # Check if Job ID is valid
-    # job = check_job_id(job_id)
     await jobs.verify_by_id(job_id)
     job = await Job.prisma().find_first(where={"id": job_id}, include={"runsResults": False})
     # Check if the job is waiting
@@ -130,27 +130,7 @@ async def grace_time_expired(job_id: str, api_key: str = Header(...)):
         print("Grace time expired")
     # Set the job to failed
     notify.send_notification(job_id, "expired")
-    newJobRun = JobRunCreateInput(job_id=job_id, is_success=False, error="expired", command="", runtime=0.0, started_at=datetime.datetime.utcnow(), finished_at=datetime.datetime.utcnow())
+    newJobRun = JobRunCreateInput(job_id=job_id,result=JobRunResult.EXPIRED, command="", runtime=0.0, started_at=datetime.datetime.utcnow(), finished_at=datetime.datetime.utcnow())
     await JobRun.prisma().create(newJobRun)
     await jobs.update_job(job_id, False, False, False, has_expired=True)
-    # await jobs.update_job(job_id, True, False, False)
     return {"message": "Grace time expired -> Notify"}
-    # if wasWaiting:
-    #     if config.DEV:
-    #         print("Jobs was waiting and did not execute in time!")
-    #     # notify.send_expired(job_id)
-    #     notify.send_notification(job_id, "expired")
-    #     newJobResult = {"job_id": job_id, "success": False, "expired": True}
-    #     newJobResult["timestamp"] = datetime.datetime.utcnow().isoformat() + "Z"
-    #     newJobRun = JobRun(**newJobResult)
-    #     await JobRun.prisma().create(newJobRun)
-    #     # new_jobResult_item = request.app.database[config.COLL_NAME].insert_one(newJobResult)
-    #     # created_jobResult_item = request.app.database[config.COLL_NAME].find_one({
-    #     #     "_id": new_jobResult_item.inserted_id
-    #     # })
-    #     # created_jobResult_item["_id"] = str(created_jobResult_item["_id"])
-    #     return {"message": "Job was waiting and did not execute in time!"}
-    # else:
-    #     if config.DEV:
-    #         print("Perfekt ausgeführt")
-    #     return {"message": "Job was not waiting"}

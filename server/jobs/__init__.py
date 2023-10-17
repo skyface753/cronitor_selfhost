@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from prisma.models import Job, JobRun
 from prisma.types import JobCreateInput, JobRunCreateInput
 import json
+from prisma.enums import JobRunResult
 
 class Jobs:
         
@@ -86,13 +87,13 @@ class Jobs:
     
     async def create_dummy_runs(self):
         # Create dummy data
-        should_success_run1 = JobRunCreateInput(job_id="should_success", is_success=True, error="", output="Ältester Eintrag", command="echo 'Ältester Eintrag'", started_at="1999-01-01T00:00:00.000Z", finished_at="1999-01-01T00:00:00.000Z", runtime=2.0)
-        should_success_run2 = JobRunCreateInput(job_id="should_success", is_success=True, error="", output="Neuester Eintrag", command="echo 'Neuester Eintrag'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
-        should_expired_run = JobRunCreateInput(job_id="should_expired", is_success=False, error="expired", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
-        should_fail_run1 = JobRunCreateInput(job_id="should_fail", is_success=True, error="", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
-        should_fail_run2 = JobRunCreateInput(job_id="should_fail", is_success=False, error="expired", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)   
-        should_fail_run = JobRunCreateInput(job_id="should_fail", is_success=False, error="failed", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
-        should_be_disabled_run = JobRunCreateInput(job_id="should_be_disabled", is_success=False, error="failed", output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0)
+        should_success_run1 = JobRunCreateInput(job_id="should_success",  output="Ältester Eintrag", command="echo 'Ältester Eintrag'", started_at="1999-01-01T00:00:00.000Z", finished_at="1999-01-01T00:00:00.000Z", runtime=2.0, result=JobRunResult.SUCCESS)
+        should_success_run2 = JobRunCreateInput(job_id="should_success",  output="Neuester Eintrag", command="echo 'Neuester Eintrag'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0 , result=JobRunResult.SUCCESS)
+        should_expired_run = JobRunCreateInput(job_id="should_expired",  output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0, result=JobRunResult.EXPIRED)
+        should_fail_run1 = JobRunCreateInput(job_id="should_fail",  output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0, result=JobRunResult.SUCCESS)
+        should_fail_run2 = JobRunCreateInput(job_id="should_fail",  output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0, result=JobRunResult.EXPIRED)
+        should_fail_run = JobRunCreateInput(job_id="should_fail",  output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0, result=JobRunResult.FAILED)
+        should_be_disabled_run = JobRunCreateInput(job_id="should_be_disabled",  output="", command="echo 'Hallo Welt'", started_at="2021-01-01T00:00:00.000Z", finished_at="2021-01-01T00:00:00.000Z", runtime=2.0, result=JobRunResult.FAILED)
         await JobRun.prisma().create(should_success_run1)
         await JobRun.prisma().create(should_success_run2)
         await JobRun.prisma().create(should_expired_run)

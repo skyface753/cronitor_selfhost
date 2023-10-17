@@ -80,8 +80,7 @@ def test_insert_result(client):
     assert job["is_running"] == False
     assert job["has_expired"] == False
     assert insertedRun["job_id"] == "should_success"
-    assert insertedRun["is_success"] == True
-    assert insertedRun["error"] == ""
+    assert insertedRun["result"] == "SUCCESS"
     assert insertedRun["output"] == "Test Message"
     assert insertedRun["command"] == "echo 'Hallo Welt'"
     assert insertedRun["started_at"] == "2021-01-01T00:00:00+00:00" # Convert to UTC

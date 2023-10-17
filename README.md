@@ -187,3 +187,19 @@ Enter job id to delete: testjob
 
 The error logs are also stored in the folder `logs`.
 The folder will be created automatically, when the first error occurs.
+
+## Development
+
+### Prisma
+
+Create a Migration. Change the `--name`.
+
+```bash
+DATABASE_URL="postgresql://root:root@localhost:5432/test_db" prisma migrate dev --name added_enums_for_stati --schema ./server/prisma/schema.prisma
+```
+
+Deploy the Migration
+
+```bash
+DATABASE_URL="postgresql://root:root@localhost:5432/test_db" prisma migrate deploy --schema ./server/prisma/schema.prisma
+```

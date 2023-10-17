@@ -29,9 +29,14 @@ model JobRun{
   job_id String
   started_at DateTime
   finished_at DateTime
-  is_success Boolean
-  error String? // expired, failed
+  result JobRunResult
   command String
   output String?
   runtime Int
+}
+
+enum JobRunResult {
+  SUCCESS
+  FAILED
+  EXPIRED
 }
