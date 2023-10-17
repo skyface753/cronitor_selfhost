@@ -30,16 +30,16 @@ export default function Page() {
         );
         var series = data.runsResults.map((result) => result.runtime);
         var colors = data.runsResults.map((result) =>
-          result.is_success
+          result.result === 'SUCCESS'
             ? '#008000'
-            : result.error === 'expired'
+            : result.result === 'EXPIRED'
             ? '#FFA500'
             : '#ff0000'
         );
         var labels = data.runsResults.map((result) =>
-          result.is_success
+          result.result === 'SUCCESS'
             ? 'Success'
-            : result.error === 'expired'
+            : result.result === 'EXPIRED'
             ? 'Expired'
             : 'Failed'
         );
@@ -245,17 +245,17 @@ export default function Page() {
                   <div className='job-status'>
                     <span
                       className={`dot tooltip ${
-                        result.is_success
+                        result.result === 'SUCCESS'
                           ? 'green'
-                          : result.error === 'expired'
+                          : result.result === 'EXPIRED'
                           ? 'orange'
                           : 'red'
                       }`}
                     ></span>{' '}
                     <span className='status-text'>
-                      {result.is_success
+                      {result.result === 'SUCCESS'
                         ? 'Success'
-                        : result.error === 'expired'
+                        : result.result === 'EXPIRED'
                         ? 'Expired'
                         : 'Failed'}
                     </span>

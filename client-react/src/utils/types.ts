@@ -14,9 +14,12 @@ export type JobResult = {
   job_id: string;
   started_at: string;
   finished_at: string;
-  is_success: boolean;
-  error: string; // failed, expired
+  result: JobRunResult;
+  // is_success: boolean;
+  // error: string; // failed, expired
   command: string;
   output: string;
   runtime: number;
 };
+
+export type JobRunResult = 'SUCCESS' | 'FAILED' | 'EXPIRED';

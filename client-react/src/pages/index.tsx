@@ -3,6 +3,7 @@ import { SkyLoader } from '@/components/loader/skyloader';
 import { Job } from '@/utils/types';
 import { getCrons } from '@/utils/api';
 import cronstrue from 'cronstrue';
+import { JobRunResult } from '@/utils/types';
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -85,12 +86,7 @@ export default function Home() {
                           )
                         )}
                         <br />
-                        {job.runsResults[job.runsResults.length - 1].is_success
-                          ? 'Success'
-                          : job.runsResults[job.runsResults.length - 1]
-                              .error === 'expired'
-                          ? 'Expired'
-                          : 'Failed'}
+                        {job.runsResults[job.runsResults.length - 1].result}
                         <br />
                         {'Runtime: '}
                         {
@@ -107,9 +103,9 @@ export default function Home() {
                     <li key={result.id}>
                       <span
                         className={`dot tooltip ${
-                          result.is_success
+                          result.result == 'SUCCESS'
                             ? 'green'
-                            : result.error === 'expired'
+                            : result.result == 'EXPIRED'
                             ? 'orange'
                             : 'red'
                         }`}
@@ -125,11 +121,7 @@ export default function Home() {
                             timeStyle: 'medium',
                           }).format(new Date(result.finished_at))}
                           <br />
-                          {result.is_success
-                            ? 'Success'
-                            : result.error === 'expired'
-                            ? 'Expired'
-                            : 'Failed'}
+                          {result.result}
                         </span>
                       </span>
                     </li>
