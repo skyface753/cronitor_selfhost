@@ -45,11 +45,16 @@ async def delete_disabled_job(job_id: str, api_key: str = Header(...)):
     return {"message": "Job deleted"}
 
 @jobsRouter.get("/{job_id}", response_description="get a job result", response_model=JobResultResponse)
-async def list_job(job_id: str):
+async def list_job(job_id: str, all_results: bool = False):
     await jobs.verify_by_id(job_id)
     job = await Job.prisma().find_first(where={"id": job_id, "enabled": True}, include={"runsResults": False})
     # Get all runs for the job
-    job.runsResults = await JobRun.prisma().find_many(where={"job_id": job.id}, order={"id": "desc"})
+    if all_results:
+        runs = await JobRun.prisma().find_many(where={"job_id": job_id}, include={"job": False})
+    else:
+        # Get the latest 30 runs for the job
+        runs = await JobRun.prisma().find_many(where={"job_id": job_id}, take=30, include={"job": False}, order={"finished_at": "desc"})
+    job.runsResults = runs
     return JobResultResponse(job=job, response="OK")
     
 
